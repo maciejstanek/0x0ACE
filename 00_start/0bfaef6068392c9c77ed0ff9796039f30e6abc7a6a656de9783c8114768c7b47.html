@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<!-- saved from url=(0091)http://80.233.134.208/0bfaef6068392c9c77ed0ff9796039f30e6abc7a6a656de9783c8114768c7b47.html -->
+<html><script type="text/javascript">(function (){
+		for (var i in window)
+		{
+			try {
+				var jsType = typeof window[i];
+				switch (jsType.toUpperCase())
+				{					
+					case "FUNCTION": 
+						if (window[i] !== window.location)
+						{
+							if (window[i] === window.open || (window.showModelessDialog && window[i] === window.showModelessDialog))
+								window[i] = function(){return true;};
+							else if (window[i] === window.onbeforeunload)	// To try to fix onbeforeunload pop ups some users report seeing but I can't replicate.
+								window.onbeforeunload = null;
+							else if (window[i] === window.onunload)
+								window.onunload = null;								
+							else
+								window[i] = function(){return "";};
+						}
+						break;							
+				}			
+			}
+			catch(err)
+			{}		
+		}
+		
+		for (var i in document)
+		{
+			try {
+				var jsType = typeof document[i];
+				switch (jsType.toUpperCase())
+				{					
+					case "FUNCTION":
+						document[i] = function(){return "";};
+						break;					
+				}			
+			}
+			catch(err)
+			{}		
+		}
+
+		try {
+			eval = function(){return "";};				
+			unescape = function(){return "";};
+			String = function(){return "";};
+			parseInt = function(){return "";};
+			parseFloat = function(){return "";};
+			Number = function(){return "";};
+			isNaN = function(){return "";};
+			isFinite = function(){return "";};
+			escape = function(){return "";};
+			encodeURIComponent = function(){return "";};
+			encodeURI = function(){return "";};
+			decodeURIComponent = function(){return "";};
+			decodeURI = function(){return "";};
+			Array = function(){return "";};
+			Boolean = function(){return "";};
+			Date = function(){return "";};
+			Math = function(){return "";};
+			Number = function(){return "";};
+			RegExp = function(){return "";};
+			
+			var oNav = navigator;
+			navigator = function(){return "";};
+			oNav = null;			
+		}
+		catch(err)
+		{}
+		
+	})();</script><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta http-equiv="x-ua-compatible" content="ie=edge"><title>0x0ACE</title><meta name="viewport" content="initial-scale=1, width=device-width">
+        <link rel="apple-touch-icon" href="http://80.233.134.208/apple-icon.png">
+    <style>
+        * { font-family: monospace; }
+        html, body { height: 100%; }
+        span.next-loc { font-family: Arial; font-size: 32pt; background-color: #01c0de; }
+        div.footer { color: silver; position: absolute; bottom: 2em; }
+    </style>
+    </head>
+    <body>
+        <h1>we're glad you understand base64. now it's time to implement something</h1>
+        <span>here's your special <b>key</b> that will accompany you during rest of the journey. <b>
+PKmAZq8oYagM1R6N2ZOlxzJbknvpVXJe9V3q0wyQAe5LKj8W4EPG9dDrm0jW6VNL</b></span><br><br>
+        <span class="next-loc">5.9.247.121/d34dc0d3</span><br>
+        <br><br>
+        <br><br>
+        <b>Notes:</b><br>
+        <sup>1</sup>&nbsp;—&nbsp;some of the HTTP pages from now on will require you to send extra packet containing your key<br>
+        <sup>2</sup>&nbsp;—&nbsp;format of the header: X-0x0ACE-Key: key
+        <div class="footer">0x0<u>ACE</u></div>
+    
+</body></html>

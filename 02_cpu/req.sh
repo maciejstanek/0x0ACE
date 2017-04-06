@@ -10,8 +10,8 @@ curl --header "$game_key" $ip/0x00000ACE.html > $html_file
 binary_file_url=$ip/$(cat $html_file | grep POST | sed 's/.*\(challenge[^\"]*\)\">/\1/')
 
 # Scrap the current binary file
-curl --header "$gamekey" $binary_file_url > $binary_file
+curl --header "$game_key" $binary_file_url > $binary_file
 
 # Process
-./cpu $binary_file
+./acpu $binary_file
 

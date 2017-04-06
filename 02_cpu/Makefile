@@ -2,7 +2,7 @@ all: cpu
 	./req.sh
 
 cpu: clean main.cxx
-	g++ main.cxx -o cpu
+	g++ -std=c++11 main.cxx -o acpu
 
 clean:
-	rm -f cpu
+	rm -f acpu

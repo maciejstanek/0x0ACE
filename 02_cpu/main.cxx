@@ -164,17 +164,21 @@ class Cpu {
 		vector<Opcode*>::iterator index;
 		uint16_t r[4];
 		vector<Opcode*> *program;
+		int watchdog;
+		bool flag;
 	
 	public:
 		// constructor {{{
 		Cpu(vector<Opcode*>* _program)
 			: program(_program)
+			, index(_program->begin())
+			, watchdog(99)
+			, flag(false)
 		{
 			r[0] = 0;
 			r[1] = 0;
 			r[2] = 0;
 			r[3] = 0;
-			index = _program->begin();
 		}
 		// }}}
 		// method PrintStateJSON {{{
@@ -192,15 +196,17 @@ class Cpu {
 			return 0;
 		}
 		// }}}
+	protected:
 		// method Tick {{{
 		// NOTE: I won't implement everything: turns out
-		//       each downoaded program is similar, uses
+		//       each downloaded program is similar, uses
 		//       only one jump, one decrement, no stack
-		//       operations, etc.
+		//       operations, not used modifier, etc.
 		int Tick() {
+			--watchdog;
 			Opcode *opcode = *index;
 			switch(opcode->GetCode()) {
-				// move {{{
+				// 0x00 move {{{
 				case 0x00: {
 					switch(opcode->GetMod()) {
 						case 0x2: { // reg+imm
@@ -214,7 +220,201 @@ class Cpu {
 							return 0;
 						}
 					}
-					printf("Invalid modifier %x in move command\n", opcode->GetMod());
+					printf("Invalid modifier 0x%x\n", opcode->GetMod());
+					return 1;
+				}
+				// }}}
+				// 0x01 bitwise or {{{
+				case 0x01: {
+					switch(opcode->GetMod()) {
+						case 0x2: { // reg+imm
+							r[opcode->GetDestReg()] = opcode->GetImm() | r[opcode->GetSrcReg()];
+							flag = r[opcode->GetDestReg()]?false:true;
+							index++;
+							return 0;
+						}
+						case 0x3: { // reg+reg
+							r[opcode->GetDestReg()] = r[opcode->GetDestReg()] | r[opcode->GetSrcReg()];
+							flag = r[opcode->GetDestReg()]?false:true;
+							index++;
+							return 0;
+						}
+					}
+					printf("Invalid modifier 0x%x\n", opcode->GetMod());
+					return 1;
+				}
+				// }}}
+				// 0x02 bitwise xor {{{
+				case 0x02: {
+					switch(opcode->GetMod()) {
+						case 0x2: { // reg+imm
+							r[opcode->GetDestReg()] = opcode->GetImm() ^ r[opcode->GetSrcReg()];
+							flag = r[opcode->GetDestReg()]?false:true;
+							index++;
+							return 0;
+						}
+						case 0x3: { // reg+reg
+							r[opcode->GetDestReg()] = r[opcode->GetDestReg()] ^ r[opcode->GetSrcReg()];
+							flag = r[opcode->GetDestReg()]?false:true;
+							index++;
+							return 0;
+						}
+					}
+					printf("Invalid modifier 0x%x\n", opcode->GetMod());
+					return 1;
+				}
+				// }}}
+				// 0x03 bitwise and {{{
+				case 0x03: {
+					switch(opcode->GetMod()) {
+						case 0x2: { // reg+imm
+							r[opcode->GetDestReg()] = opcode->GetImm() & r[opcode->GetSrcReg()];
+							flag = r[opcode->GetDestReg()]?false:true;
+							index++;
+							return 0;
+						}
+						case 0x3: { // reg+reg
+							r[opcode->GetDestReg()] = r[opcode->GetDestReg()] & r[opcode->GetSrcReg()];
+							flag = r[opcode->GetDestReg()]?false:true;
+							index++;
+							return 0;
+						}
+					}
+					printf("Invalid modifier 0x%x\n", opcode->GetMod());
+					return 1;
+				}
+				// }}}
+				// 0x04 bitwise negation {{{
+				case 0x04: {
+					switch(opcode->GetMod()) {
+						case 0x1: { // reg
+							r[opcode->GetDestReg()] = ~r[opcode->GetSrcReg()];
+							flag = r[opcode->GetDestReg()]?false:true;
+							index++;
+							return 0;
+						}
+					}
+					printf("Invalid modifier 0x%x\n", opcode->GetMod());
+					return 1;
+				}
+				// }}}
+				// 0x05 addition {{{
+				case 0x05: {
+					switch(opcode->GetMod()) {
+						case 0x2: { // reg+imm
+							r[opcode->GetDestReg()] = opcode->GetImm() + r[opcode->GetSrcReg()];
+							flag = r[opcode->GetDestReg()]?false:true;
+							index++;
+							return 0;
+						}
+						case 0x3: { // reg+reg
+							r[opcode->GetDestReg()] = r[opcode->GetDestReg()] + r[opcode->GetSrcReg()];
+							flag = r[opcode->GetDestReg()]?false:true;
+							index++;
+							return 0;
+						}
+					}
+					printf("Invalid modifier 0x%x\n", opcode->GetMod());
+					return 1;
+				}
+				// }}}
+				// 0x06 subtraction {{{
+				case 0x06: {
+					switch(opcode->GetMod()) {
+						case 0x2: { // reg+imm
+							r[opcode->GetDestReg()] = opcode->GetImm() - r[opcode->GetSrcReg()];
+							flag = r[opcode->GetDestReg()]?false:true;
+							index++;
+							return 0;
+						}
+						case 0x3: { // reg+reg
+							r[opcode->GetDestReg()] = r[opcode->GetDestReg()] - r[opcode->GetSrcReg()];
+							flag = r[opcode->GetDestReg()]?false:true;
+							index++;
+							return 0;
+						}
+					}
+					printf("Invalid modifier 0x%x\n", opcode->GetMod());
+					return 1;
+				}
+				// }}}
+				// 0x07 multiplication {{{
+				case 0x07: {
+					switch(opcode->GetMod()) {
+						case 0x2: { // reg+imm
+							r[opcode->GetDestReg()] = opcode->GetImm() * r[opcode->GetSrcReg()];
+							flag = r[opcode->GetDestReg()]?false:true;
+							index++;
+							return 0;
+						}
+						case 0x3: { // reg+reg
+							r[opcode->GetDestReg()] = r[opcode->GetDestReg()] * r[opcode->GetSrcReg()];
+							flag = r[opcode->GetDestReg()]?false:true;
+							index++;
+							return 0;
+						}
+					}
+					printf("Invalid modifier 0x%x\n", opcode->GetMod());
+					return 1;
+				}
+				// }}}
+				// 0x08 shift left {{{
+				case 0x08: {
+					// TODO: Does shift works "mathematically" (endianess not considered)
+					//       or it works "bitwise"?
+					switch(opcode->GetMod()) {
+						case 0x2: { // reg+imm
+							r[opcode->GetDestReg()] = r[opcode->GetSrcReg()] << opcode->GetImm();
+							flag = r[opcode->GetDestReg()]?false:true;
+							index++;
+							return 0;
+						}
+					}
+					printf("Invalid modifier 0x%x\n", opcode->GetMod());
+					return 1;
+				}
+				// }}}
+				// 0x09 shift right {{{
+				case 0x09: {
+					switch(opcode->GetMod()) {
+						case 0x2: { // reg+imm
+							r[opcode->GetDestReg()] = r[opcode->GetSrcReg()] >> opcode->GetImm();
+							flag = r[opcode->GetDestReg()]?false:true;
+							index++;
+							return 0;
+						}
+					}
+					printf("Invalid modifier 0x%x\n", opcode->GetMod());
+					return 1;
+				}
+				// }}}
+				// 0x0b decrement {{{
+				case 0x0b: {
+					switch(opcode->GetMod()) {
+						case 0x1: { // reg
+							r[opcode->GetDestReg()] = r[opcode->GetSrcReg()] - 1;
+							flag = r[opcode->GetDestReg()]?false:true;
+							index++;
+							return 0;
+						}
+					}
+					printf("Invalid modifier 0x%x\n", opcode->GetMod());
+					return 1;
+				}
+				// }}}
+				// 0x0f jump to nth opcode when not zero {{{
+				case 0x0f: {
+					switch(opcode->GetMod()) {
+						case 0x0: { // imm
+							if(flag) {
+								index = program->begin() + opcode->GetImm();
+								return 0;
+							}
+							index++;
+							return 0;
+						}
+					}
+					printf("Invalid modifier 0x%x\n", opcode->GetMod());
 					return 1;
 				}
 				// }}}
@@ -223,9 +423,15 @@ class Cpu {
 			return 1;
 		}
 		// }}}
+	public:
 		// method Run {{{
 		int Run() {
+			PrintState();
 			while(index != program->end()) {
+				if(!watchdog) {
+					cout << "Watchdog has stopped the CPU at command #" << GetIndex() << endl;
+					return 1;
+				}
 				if(Tick()) {
 					cout << "The emulator failed on command #" << GetIndex() << endl;
 					cout << "CPU register dump" << endl
@@ -235,13 +441,22 @@ class Cpu {
 						<< "  | r3 = " << r[3] << endl;
 					return 1;
 				}
+				PrintState();
 			}
+			PrintState();
 			return 0;
 		}
 		// }}}
+	protected:
 		// method GetIndex {{{
 		int GetIndex() {
 			return distance(program->begin(), index);
+		}
+		// }}}
+		// method PrintState {{{
+		void PrintState() {
+			printf("watchdog=%05d index=%02d flag=%d r0=%04x r1=%04x r2=%04x r3=%04x\n",
+				watchdog, GetIndex(), flag, r[0], r[1], r[2], r[3]);
 		}
 		// }}}
 };

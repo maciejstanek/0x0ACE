@@ -1,7 +1,7 @@
 #include <cstdlib>
 #include <cstdio>
 #include <cstdint>
-#include <stream>
+#include <sstream>
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -136,31 +136,66 @@ class Opcode
 // class Cpu {{{
 class Cpu {
 	protected:
-		int index;
+		vector<Opcode*>::iterator index;
 		uint16_t r[4];
 		vector<Opcode*> *program;
-	
-	private:
-		regString;
 	
 	public:
 		// constructor {{{
 		Cpu(vector<Opcode*>* _program)
-			: index(0)
-			, program(_program)
+			: program(_program)
 		{
 			r[0] = 0;
 			r[1] = 0;
 			r[2] = 0;
 			r[3] = 0;
+			index = _program->begin();
 		}
 		// }}}
-		// method GetRegistersText {{{
-		void GetRegistersText() {
+		// method PrintStateJSON {{{
+		int PrintStateJSON(const char *file) {
+			FILE *fp = fopen(file, "w");
+			if(!fp) {
+				printf("Error while opening output file %s\n", file);
+				return 1;
+			}
+			fprintf(fp, "{\"reg0\":\"%02x%02x\",", (r[0]&0xff), ((r[0]&0xff00)>>8));
+			fprintf(fp, "\"reg1\":\"%02x%02x\",", (r[1]&0xff), ((r[1]&0xff00)>>8));
+			fprintf(fp, "\"reg2\":\"%02x%02x\",", (r[2]&0xff), ((r[2]&0xff00)>>8));
+			fprintf(fp, "\"reg3\":\"%02x%02x\"}", (r[3]&0xff), ((r[3]&0xff00)>>8));
+			fclose(fp);
+			return 0;
+		}
+		// }}}
+		// method Tick {{{
+		// NOTE: I won't implement everything: turns out
+		//       each downoaded program is similar, uses
+		//       only one jump, one decrement, no stack
+		//       operations, etc.
+		int Tick() {
+			cout << GetIndex() << endl;
 			
+
+			index++;
+			return 0;
 		}
 		// }}}
-
+		// method Run {{{
+		int Run() {
+			while(index != program->end()) {
+				if(Tick()) {
+					cout << "The emulator failed on command #" << GetIndex() << endl;
+					return 1;
+				}
+			}
+			return 0;
+		}
+		// }}}
+		// method GetIndex {{{
+		int GetIndex() {
+			return distance(program->begin(), index);
+		}
+		// }}}
 };
 // }}}
 
@@ -172,8 +207,8 @@ int main(int argc, char *argv[])
 	// Initialization {{{
 	cout << "\n\e[1;41m ======= 0x0ACE ======= \e[0m\n\n";
 	// Validate the args
-	if(argc != 2) {
-		cout << "Error, please provide a binary file as an argument. Aborting" << endl;
+	if(argc != 3) {
+		printf("\e[1;41mERROR\e[0m\nusage: %s <input.bin> <output.json>\n", argv[0]);
 		return 1;
 	}
 	// Open the file
@@ -226,10 +261,15 @@ int main(int argc, char *argv[])
 	for(auto &opcode : program) {
 		opcode->PrintDesc();
 	}
+	cout << endl;
 	// }}}
-	// Process commands
+	// Process commands {{{
 	Cpu *cpu  = new Cpu(&program);
-
+	if(cpu->Run()) {
+		return 1;
+	}
+	cpu->PrintStateJSON(argv[2]);
+	// }}}
 	// Cleanup memory {{{
 	delete [] temp;
 	delete cpu;

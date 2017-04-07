@@ -1,6 +1,7 @@
 #include <cstdlib>
 #include <cstdio>
 #include <cstdint>
+#include <stream>
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -9,6 +10,7 @@
 
 using namespace std;
 
+// class Opcode {{{
 // This class describe one opcode, independent of its byte length
 class Opcode
 {
@@ -26,6 +28,7 @@ class Opcode
 		int index;
 
 	public:
+		// method Validate {{{
 		int Validate()
 		{
 			if(code > 0x10) {
@@ -46,11 +49,13 @@ class Opcode
 			}
 			return 0;
 		}
-
+		// }}}
+		// method GetIndex {{{
 		int GetIndex() {
 			return index;
 		}
-
+		// }}}
+		// constructor {{{
 		Opcode(uint8_t _code, uint8_t _modByte)
 			: code(_code)
 			, modByte(_modByte)
@@ -61,22 +66,26 @@ class Opcode
 			srcReg = (_modByte & 0xC0) >> 6;
 			index = globalIndex++;
 		}
-
+		// }}}
+		// method IsImmRequired {{{
 		bool IsImmRequired()
 		{
 			return !(modByte&1);
 		}
-
+		// }}}
+		// method SetImm {{{
 		void SetImm(uint16_t _imm) {
 			imm = _imm;
 		}
-
+		// }}}
+		// static method PrintHeader {{{
 		static void PrintHeader()
 		{
 			cout << "\e[1m#  \u2502 opcode           imm              \u2502 operation          \u2502 modifier \u2502 src \u2502 dst \u2502 imm   \u2502\e[0m" << endl;
 			cout << "\u2501\u2501\u2501\u253f\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u253f\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u253f\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u253f\u2501\u2501\u2501\u2501\u2501\u253f\u2501\u2501\u2501\u2501\u2501\u253f\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2525" << endl;
 		}
-
+		// }}}
+		// method PrintDesc {{{
 		void PrintDesc()
 		{
 			printf("\e[32m%02d\e[0m \u2502 ", index);
@@ -118,30 +127,61 @@ class Opcode
 			if(IsImmRequired()) {
 				printf("% 6d \u2502\n", imm);
 			} else {
-				printf("       \u2502\n", imm);
+				printf("       \u2502\n");
 			}
 		}
+		// }}}
 };
+// }}}
+// class Cpu {{{
+class Cpu {
+	protected:
+		int index;
+		uint16_t r[4];
+		vector<Opcode*> *program;
+	
+	private:
+		regString;
+	
+	public:
+		// constructor {{{
+		Cpu(vector<Opcode*>* _program)
+			: index(0)
+			, program(_program)
+		{
+			r[0] = 0;
+			r[1] = 0;
+			r[2] = 0;
+			r[3] = 0;
+		}
+		// }}}
+		// method GetRegistersText {{{
+		void GetRegistersText() {
+			
+		}
+		// }}}
+
+};
+// }}}
 
 int Opcode::globalIndex = 0;
 
+// function main {{{
 int main(int argc, char *argv[])
 {
+	// Initialization {{{
 	cout << "\n\e[1;41m ======= 0x0ACE ======= \e[0m\n\n";
-
 	// Validate the args
 	if(argc != 2) {
 		cout << "Error, please provide a binary file as an argument. Aborting" << endl;
 		return 1;
 	}
-
 	// Open the file
 	ifstream binaryFile(argv[1], ios::in | ios::binary | ios::ate);
 	if(!binaryFile.is_open()) {
 		printf("Error while opening the binary file '%s'. Aborting.\n", argv[1]);
 		return 1;
 	}
-
 	// Load the file into memory
 	ifstream::pos_type binarySize = binaryFile.tellg();
 	char *temp = new char[binarySize];
@@ -151,8 +191,8 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 	binaryFile.close();
-
-	// Parse binary to opcodes
+	// }}}
+	// Parse binary to opcodes {{{
 	vector<Opcode*> program;
 	int byteIndex = 0;
 	while(byteIndex < binarySize) {
@@ -180,17 +220,23 @@ int main(int argc, char *argv[])
 		// Save the opcode in a vector
 		program.push_back(opcode);
 	}
-
-	// Print the parsed opcodes
+	// }}}
+	// Print the parsed opcodes {{{
 	Opcode::PrintHeader();
 	for(auto &opcode : program) {
 		opcode->PrintDesc();
 	}
+	// }}}
+	// Process commands
+	Cpu *cpu  = new Cpu(&program);
 
+	// Cleanup memory {{{
 	delete [] temp;
+	delete cpu;
 	for(auto &opcode : program) {
 		delete opcode;
 	}
-
+	// }}}
 	return 0;
 }
+// }}}

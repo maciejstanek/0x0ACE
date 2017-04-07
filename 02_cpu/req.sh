@@ -20,5 +20,17 @@ if [[ $ret -ne 0 ]]; then
 	exit $ret
 fi
 
-# Show result
-cat $json_file
+# Load result
+for x in 0 1 2 3; do
+	reg[$x]=$(cat $json_file | jq -r .\"reg$x\")
+done
+echo -e "\e[1;42m ${reg[*]} \e[0m"
+
+# Generate POST data string
+result_file=result.html
+data="reg0=${reg[0]}&reg1=${reg[1]}&reg2=${reg[2]}&reg3=${reg[3]}"
+encoded=$(php html.php "$data")
+
+# Send the solution
+curl -v --data-ascii --data-urlencode --data "$encoded" --header "$game_key" $binary_file_url > $result_file
+cat $result_file

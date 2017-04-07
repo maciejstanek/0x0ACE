@@ -131,6 +131,31 @@ class Opcode
 			}
 		}
 		// }}}
+		// method GetCode() {{{
+		uint8_t GetCode() {
+			return code;
+		}
+		// }}}
+		// method GetImm() {{{
+		uint16_t GetImm() {
+			return imm;
+		}
+		// }}}
+		// method GetDestReg() {{{
+		uint8_t GetDestReg() {
+			return destReg;
+		}
+		// }}}
+		// method GetDestReg() {{{
+		uint8_t GetSrcReg() {
+			return srcReg;
+		}
+		// }}}
+		// method GetMod() {{{
+		uint8_t GetMod() {
+			return mod;
+		}
+		// }}}
 };
 // }}}
 // class Cpu {{{
@@ -173,11 +198,29 @@ class Cpu {
 		//       only one jump, one decrement, no stack
 		//       operations, etc.
 		int Tick() {
-			cout << GetIndex() << endl;
-			
-
-			index++;
-			return 0;
+			Opcode *opcode = *index;
+			switch(opcode->GetCode()) {
+				// move {{{
+				case 0x00: {
+					switch(opcode->GetMod()) {
+						case 0x2: { // reg+imm
+							r[opcode->GetDestReg()] = opcode->GetImm();
+							index++;
+							return 0;
+						}
+						case 0x3: { // reg+reg
+							r[opcode->GetDestReg()] = r[opcode->GetSrcReg()];
+							index++;
+							return 0;
+						}
+					}
+					printf("Invalid modifier %x in move command\n", opcode->GetMod());
+					return 1;
+				}
+				// }}}
+			}
+			printf("Unknown command 0x%02x\n", opcode->GetCode());
+			return 1;
 		}
 		// }}}
 		// method Run {{{
@@ -185,6 +228,11 @@ class Cpu {
 			while(index != program->end()) {
 				if(Tick()) {
 					cout << "The emulator failed on command #" << GetIndex() << endl;
+					cout << "CPU register dump" << endl
+						<< "  | r0 = " << r[0] << endl
+						<< "  | r1 = " << r[1] << endl
+						<< "  | r2 = " << r[2] << endl
+						<< "  | r3 = " << r[3] << endl;
 					return 1;
 				}
 			}

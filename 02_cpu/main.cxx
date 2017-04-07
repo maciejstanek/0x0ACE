@@ -73,8 +73,8 @@ class Opcode
 
 		static void PrintHeader()
 		{
-			cout << "\e[1m#  \u2502 opcode           imm              \u2502 operation                        \u2502 modifier \u2502 src \u2502 dst \u2502\e[0m" << endl;
-			cout << "\u2501\u2501\u2501\u253f\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u253f\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u253f\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u253f\u2501\u2501\u2501\u2501\u2501\u253f\u2501\u2501\u2501\u2501\u2501\u2525" << endl;
+			cout << "\e[1m#  \u2502 opcode           imm              \u2502 operation          \u2502 modifier \u2502 src \u2502 dst \u2502 imm   \u2502\e[0m" << endl;
+			cout << "\u2501\u2501\u2501\u253f\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u253f\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u253f\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u253f\u2501\u2501\u2501\u2501\u2501\u253f\u2501\u2501\u2501\u2501\u2501\u253f\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2525" << endl;
 		}
 
 		void PrintDesc()
@@ -87,24 +87,24 @@ class Opcode
 				cout << "\e[1;30m................\e[0m \u2502 ";
 			}
 			switch(code) {
-				case 0x00: printf("\e[32mmove                            \e[0m \u2502 "); break;
-				case 0x01: printf("\e[33mbitwise or                      \e[0m \u2502 "); break;
-				case 0x02: printf("\e[33mbitwise xor                     \e[0m \u2502 "); break;
-				case 0x03: printf("\e[33mbitwise and                     \e[0m \u2502 "); break;
-				case 0x04: printf("\e[33mbitwise negation                \e[0m \u2502 "); break;
-				case 0x05: printf("\e[34maddition                        \e[0m \u2502 "); break;
-				case 0x06: printf("\e[34msubtraction                     \e[0m \u2502 "); break;
-				case 0x07: printf("\e[34mmultiplication                  \e[0m \u2502 "); break;
-				case 0x08: printf("\e[35mshift left                      \e[0m \u2502 "); break;
-				case 0x09: printf("\e[35mshift right                     \e[0m \u2502 "); break;
-				case 0x0a: printf("\e[34mincrement                       \e[0m \u2502 "); break;
-				case 0x0b: printf("\e[34mdecrement                       \e[0m \u2502 "); break;
-				case 0x0c: printf("\e[36mpush on stack                   \e[0m \u2502 "); break;
-				case 0x0d: printf("\e[36mpop from stack                  \e[0m \u2502 "); break;
-				case 0x0e: printf("\e[37mcompare                         \e[0m \u2502 "); break;
-				case 0x0f: printf("\e[37mjump to nth opcode when not zero\e[0m \u2502 "); break;
-				case 0x10: printf("\e[37mjump to nth opcode when zero    \e[0m \u2502 "); break;
-				default  : printf("\e[31minvalid cmd                     \e[0m \u2502 "); break;
+				case 0x00: printf("\e[32mmove              \e[0m \u2502 "); break;
+				case 0x01: printf("\e[33mbitwise or        \e[0m \u2502 "); break;
+				case 0x02: printf("\e[33mbitwise xor       \e[0m \u2502 "); break;
+				case 0x03: printf("\e[33mbitwise and       \e[0m \u2502 "); break;
+				case 0x04: printf("\e[33mbitwise negation  \e[0m \u2502 "); break;
+				case 0x05: printf("\e[34maddition          \e[0m \u2502 "); break;
+				case 0x06: printf("\e[34msubtraction       \e[0m \u2502 "); break;
+				case 0x07: printf("\e[34mmultiplication    \e[0m \u2502 "); break;
+				case 0x08: printf("\e[35mshift left        \e[0m \u2502 "); break;
+				case 0x09: printf("\e[35mshift right       \e[0m \u2502 "); break;
+				case 0x0a: printf("\e[34mincrement         \e[0m \u2502 "); break;
+				case 0x0b: printf("\e[34mdecrement         \e[0m \u2502 "); break;
+				case 0x0c: printf("\e[36mpush on stack     \e[0m \u2502 "); break;
+				case 0x0d: printf("\e[36mpop from stack    \e[0m \u2502 "); break;
+				case 0x0e: printf("\e[37mcompare           \e[0m \u2502 "); break;
+				case 0x0f: printf("\e[37mjump when not zero\e[0m \u2502 "); break;
+				case 0x10: printf("\e[37mjump when zero    \e[0m \u2502 "); break;
+				default  : printf("\e[31minvalid cmd       \e[0m \u2502 "); break;
 			}
 			switch(mod) {
 				case 0x00: printf(" \e[32mimm    \e[0m \u2502 "); break;
@@ -114,8 +114,12 @@ class Opcode
 				default  : printf(" \e[31minvalid\e[0m \u2502 "); break;
 			}
 			printf(" \e[%dmr%d\e[0m \u2502 ", srcReg+31, srcReg);
-			printf(" \e[%dmr%d\e[0m \u2502 ", destReg+31, destReg);
-			cout << endl;
+			printf(" \e[%dmr%d\e[0m \u2502", destReg+31, destReg);
+			if(IsImmRequired()) {
+				printf("% 6d \u2502\n", imm);
+			} else {
+				printf("       \u2502\n", imm);
+			}
 		}
 };
 

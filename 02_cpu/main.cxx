@@ -439,6 +439,7 @@ class Cpu {
 					cout << "Watchdog has stopped the CPU at command #" << GetIndex() << endl;
 					return 1;
 				}
+				printf("DBG: src=%d dest=%d\n", (*index)->GetSrcReg(), (*index)->GetDestReg());
 				if(Tick()) {
 					cout << "The emulator failed on command #" << GetIndex() << endl;
 					cout << "CPU register dump" << endl

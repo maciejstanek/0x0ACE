@@ -23,14 +23,14 @@ fi
 # Load result
 for x in 0 1 2 3; do
 	reg[$x]=$(cat $json_file | jq -r .\"reg$x\")
+	regrev[$x]=${reg[$x]:2:2}${reg[$x]:0:2}
 done
-echo -e "\e[1;42m ${reg[*]} \e[0m"
+echo -e "\e[1;46m ${regrev[*]} \e[0m"
 
 # Generate POST data string
-result_file=result.html
-data="reg0=${reg[0]}&reg1=${reg[1]}&reg2=${reg[2]}&reg3=${reg[3]}"
-encoded=$(php html.php "$data")
+datarev="reg0=${regrev[0]}&reg1=${regrev[1]}&reg2=${regrev[2]}&reg3=${regrev[3]}"
 
 # Send the solution
-curl -v --data-ascii --data-urlencode --data "$encoded" --header "$game_key" $binary_file_url > $result_file
-cat $result_file
+echo -e "\e[33m$datarev\e[0m"
+resultrev=$(curl -v --data "$datarev" --header "$game_key" $binary_file_url)
+echo -e "\e[1;43m$resultrev\e[0m"

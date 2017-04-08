@@ -165,15 +165,15 @@ class Cpu {
 		uint16_t r[4];
 		vector<Opcode*> *program;
 		int watchdog;
-		bool flag;
+		bool zeroFlag;
 	
 	public:
 		// constructor {{{
 		Cpu(vector<Opcode*>* _program)
 			: program(_program)
 			, index(_program->begin())
-			, watchdog(99)
-			, flag(false)
+			, watchdog(999)
+			, zeroFlag(false)
 		{
 			r[0] = 0;
 			r[1] = 0;
@@ -228,14 +228,15 @@ class Cpu {
 				case 0x01: {
 					switch(opcode->GetMod()) {
 						case 0x2: { // reg+imm
-							r[opcode->GetDestReg()] = opcode->GetImm() | r[opcode->GetSrcReg()];
-							flag = r[opcode->GetDestReg()]?false:true;
+							//r[opcode->GetDestReg()] = opcode->GetImm() | r[opcode->GetSrcReg()];
+							r[opcode->GetDestReg()] |= opcode->GetImm();
+							zeroFlag = r[opcode->GetDestReg()]?false:true;
 							index++;
 							return 0;
 						}
 						case 0x3: { // reg+reg
-							r[opcode->GetDestReg()] = r[opcode->GetDestReg()] | r[opcode->GetSrcReg()];
-							flag = r[opcode->GetDestReg()]?false:true;
+							r[opcode->GetDestReg()] |= r[opcode->GetSrcReg()];
+							zeroFlag = r[opcode->GetDestReg()]?false:true;
 							index++;
 							return 0;
 						}
@@ -248,14 +249,15 @@ class Cpu {
 				case 0x02: {
 					switch(opcode->GetMod()) {
 						case 0x2: { // reg+imm
-							r[opcode->GetDestReg()] = opcode->GetImm() ^ r[opcode->GetSrcReg()];
-							flag = r[opcode->GetDestReg()]?false:true;
+							//r[opcode->GetDestReg()] = opcode->GetImm() ^ r[opcode->GetSrcReg()];
+							r[opcode->GetDestReg()] ^= opcode->GetImm();
+							zeroFlag = r[opcode->GetDestReg()]?false:true;
 							index++;
 							return 0;
 						}
 						case 0x3: { // reg+reg
-							r[opcode->GetDestReg()] = r[opcode->GetDestReg()] ^ r[opcode->GetSrcReg()];
-							flag = r[opcode->GetDestReg()]?false:true;
+							r[opcode->GetDestReg()] ^= r[opcode->GetSrcReg()];
+							zeroFlag = r[opcode->GetDestReg()]?false:true;
 							index++;
 							return 0;
 						}
@@ -268,14 +270,15 @@ class Cpu {
 				case 0x03: {
 					switch(opcode->GetMod()) {
 						case 0x2: { // reg+imm
-							r[opcode->GetDestReg()] = opcode->GetImm() & r[opcode->GetSrcReg()];
-							flag = r[opcode->GetDestReg()]?false:true;
+							//r[opcode->GetDestReg()] = opcode->GetImm() & r[opcode->GetSrcReg()];
+							r[opcode->GetDestReg()] &= opcode->GetImm();
+							zeroFlag = r[opcode->GetDestReg()]?false:true;
 							index++;
 							return 0;
 						}
 						case 0x3: { // reg+reg
-							r[opcode->GetDestReg()] = r[opcode->GetDestReg()] & r[opcode->GetSrcReg()];
-							flag = r[opcode->GetDestReg()]?false:true;
+							r[opcode->GetDestReg()] &= r[opcode->GetSrcReg()];
+							zeroFlag = r[opcode->GetDestReg()]?false:true;
 							index++;
 							return 0;
 						}
@@ -288,8 +291,9 @@ class Cpu {
 				case 0x04: {
 					switch(opcode->GetMod()) {
 						case 0x1: { // reg
-							r[opcode->GetDestReg()] = ~r[opcode->GetSrcReg()];
-							flag = r[opcode->GetDestReg()]?false:true;
+							//r[opcode->GetDestReg()] = ~r[opcode->GetSrcReg()];
+							r[opcode->GetDestReg()] = ~r[opcode->GetDestReg()];
+							zeroFlag = r[opcode->GetDestReg()]?false:true;
 							index++;
 							return 0;
 						}
@@ -302,14 +306,15 @@ class Cpu {
 				case 0x05: {
 					switch(opcode->GetMod()) {
 						case 0x2: { // reg+imm
-							r[opcode->GetDestReg()] = opcode->GetImm() + r[opcode->GetSrcReg()];
-							flag = r[opcode->GetDestReg()]?false:true;
+							//r[opcode->GetDestReg()] = opcode->GetImm() + r[opcode->GetSrcReg()];
+							r[opcode->GetDestReg()] += opcode->GetImm();
+							zeroFlag = r[opcode->GetDestReg()]?false:true;
 							index++;
 							return 0;
 						}
 						case 0x3: { // reg+reg
-							r[opcode->GetDestReg()] = r[opcode->GetDestReg()] + r[opcode->GetSrcReg()];
-							flag = r[opcode->GetDestReg()]?false:true;
+							r[opcode->GetDestReg()] += r[opcode->GetSrcReg()];
+							zeroFlag = r[opcode->GetDestReg()]?false:true;
 							index++;
 							return 0;
 						}
@@ -322,14 +327,15 @@ class Cpu {
 				case 0x06: {
 					switch(opcode->GetMod()) {
 						case 0x2: { // reg+imm
-							r[opcode->GetDestReg()] = opcode->GetImm() - r[opcode->GetSrcReg()];
-							flag = r[opcode->GetDestReg()]?false:true;
+							//r[opcode->GetDestReg()] = opcode->GetImm() - r[opcode->GetSrcReg()];
+							r[opcode->GetDestReg()] -= opcode->GetImm();
+							zeroFlag = r[opcode->GetDestReg()]?false:true;
 							index++;
 							return 0;
 						}
 						case 0x3: { // reg+reg
-							r[opcode->GetDestReg()] = r[opcode->GetDestReg()] - r[opcode->GetSrcReg()];
-							flag = r[opcode->GetDestReg()]?false:true;
+							r[opcode->GetDestReg()] -= r[opcode->GetSrcReg()];
+							zeroFlag = r[opcode->GetDestReg()]?false:true;
 							index++;
 							return 0;
 						}
@@ -342,14 +348,14 @@ class Cpu {
 				case 0x07: {
 					switch(opcode->GetMod()) {
 						case 0x2: { // reg+imm
-							r[opcode->GetDestReg()] = opcode->GetImm() * r[opcode->GetSrcReg()];
-							flag = r[opcode->GetDestReg()]?false:true;
+							r[opcode->GetDestReg()] *= opcode->GetImm();
+							zeroFlag = r[opcode->GetDestReg()]?false:true;
 							index++;
 							return 0;
 						}
 						case 0x3: { // reg+reg
-							r[opcode->GetDestReg()] = r[opcode->GetDestReg()] * r[opcode->GetSrcReg()];
-							flag = r[opcode->GetDestReg()]?false:true;
+							r[opcode->GetDestReg()] *= r[opcode->GetSrcReg()];
+							zeroFlag = r[opcode->GetDestReg()]?false:true;
 							index++;
 							return 0;
 						}
@@ -364,8 +370,8 @@ class Cpu {
 					//       or it works "bitwise"?
 					switch(opcode->GetMod()) {
 						case 0x2: { // reg+imm
-							r[opcode->GetDestReg()] = r[opcode->GetSrcReg()] << opcode->GetImm();
-							flag = r[opcode->GetDestReg()]?false:true;
+							r[opcode->GetDestReg()] <<= opcode->GetImm();
+							zeroFlag = r[opcode->GetDestReg()]?false:true;
 							index++;
 							return 0;
 						}
@@ -378,8 +384,8 @@ class Cpu {
 				case 0x09: {
 					switch(opcode->GetMod()) {
 						case 0x2: { // reg+imm
-							r[opcode->GetDestReg()] = r[opcode->GetSrcReg()] >> opcode->GetImm();
-							flag = r[opcode->GetDestReg()]?false:true;
+							r[opcode->GetDestReg()] >>= opcode->GetImm();
+							zeroFlag = r[opcode->GetDestReg()]?false:true;
 							index++;
 							return 0;
 						}
@@ -392,8 +398,9 @@ class Cpu {
 				case 0x0b: {
 					switch(opcode->GetMod()) {
 						case 0x1: { // reg
-							r[opcode->GetDestReg()] = r[opcode->GetSrcReg()] - 1;
-							flag = r[opcode->GetDestReg()]?false:true;
+							//r[opcode->GetDestReg()] = r[opcode->GetSrcReg()] - 1;
+							r[opcode->GetDestReg()]--;
+							zeroFlag = r[opcode->GetDestReg()]?false:true;
 							index++;
 							return 0;
 						}
@@ -402,11 +409,11 @@ class Cpu {
 					return 1;
 				}
 				// }}}
-				// 0x0f jump to nth opcode when not zero {{{
+				// 0x0f jump to nth opcode when not zeroFlag {{{
 				case 0x0f: {
 					switch(opcode->GetMod()) {
 						case 0x0: { // imm
-							if(flag) {
+							if(!zeroFlag) {
 								index = program->begin() + opcode->GetImm();
 								return 0;
 							}
@@ -443,7 +450,6 @@ class Cpu {
 				}
 				PrintState();
 			}
-			PrintState();
 			return 0;
 		}
 		// }}}
@@ -455,8 +461,8 @@ class Cpu {
 		// }}}
 		// method PrintState {{{
 		void PrintState() {
-			printf("watchdog=%05d index=%02d flag=%d r0=%04x r1=%04x r2=%04x r3=%04x\n",
-				watchdog, GetIndex(), flag, r[0], r[1], r[2], r[3]);
+			printf("watchdog=%05d index=%02d zeroFlag=%d r0=%04x r1=%04x r2=%04x r3=%04x\n",
+				watchdog, GetIndex(), zeroFlag, r[0], r[1], r[2], r[3]);
 		}
 		// }}}
 };

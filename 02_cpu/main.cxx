@@ -439,7 +439,7 @@ class Cpu {
 					cout << "Watchdog has stopped the CPU at command #" << GetIndex() << endl;
 					return 1;
 				}
-				printf("DBG: src=%d dest=%d\n", (*index)->GetSrcReg(), (*index)->GetDestReg());
+				PrintState();
 				if(Tick()) {
 					cout << "The emulator failed on command #" << GetIndex() << endl;
 					cout << "CPU register dump" << endl
@@ -449,7 +449,6 @@ class Cpu {
 						<< "  | r3 = " << r[3] << endl;
 					return 1;
 				}
-				PrintState();
 			}
 			return 0;
 		}
@@ -462,8 +461,46 @@ class Cpu {
 		// }}}
 		// method PrintState {{{
 		void PrintState() {
-			printf("watchdog=%05d index=%02d zeroFlag=%d r0=%04x r1=%04x r2=%04x r3=%04x\n",
-				watchdog, GetIndex(), zeroFlag, r[0], r[1], r[2], r[3]);
+			printf("\e[1;30mWD=%04d\e[0m ", watchdog);
+			printf("I=%02d ", GetIndex());
+			printf("\e[%cmZ=%d\e[0m ", zeroFlag?'7':'0', zeroFlag);
+			for(int i=0; i<4; i++) {
+				printf("\e[%d;%dmR%d=%04x\e[0m ", r[i]?0:1, r[i]?31+i:30, i, r[i]);
+			}
+			if((*index)->GetMod() == 0x3) {
+				printf("\e[%dmSRC=R%d\e[0m ", (*index)->GetSrcReg()+31, (*index)->GetSrcReg());
+			} else {
+				printf("\e[1;30mSRC=R%d\e[0m ", (*index)->GetSrcReg());
+			}
+			printf("\e[%dmDEST=R%d\e[0m ", (*index)->GetDestReg()+31, (*index)->GetDestReg());
+			switch((*index)->GetCode()) {
+				case 0x00: printf("CMD=MOV "); break;
+				case 0x01: printf("CMD=OR  "); break;
+				case 0x02: printf("CMD=XOR "); break;
+				case 0x03: printf("CMD=AND "); break;
+				case 0x04: printf("CMD=NEG "); break;
+				case 0x05: printf("CMD=ADD "); break;
+				case 0x06: printf("CMD=SUB "); break;
+				case 0x07: printf("CMD=MUL "); break;
+				case 0x08: printf("CMD=SHL "); break;
+				case 0x09: printf("CMD=SHR "); break;
+				case 0x0a: printf("CMD=INC "); break;
+				case 0x0b: printf("CMD=DEC "); break;
+				case 0x0c: printf("CMD=PUS "); break;
+				case 0x0d: printf("CMD=POP "); break;
+				case 0x0e: printf("CMD=CMP "); break;
+				case 0x0f: printf("CMD=JNZ "); break;
+				case 0x10: printf("CMD=JEZ "); break;
+				default  : printf("CMD=??? ");
+			}
+			switch((*index)->GetMod()) {
+				case 0x0: printf("\e[32mMOD=I   \e[0m"); break;
+				case 0x1: printf("\e[33mMOD=R   \e[0m"); break;
+				case 0x2: printf("\e[34mMOD=I+R \e[0m"); break;
+				case 0x3: printf("\e[35mMOD=R+R \e[0m"); break;
+			}
+			printf("\e[%d;%dmIMM=%04x\e[0m\n", (*index)->GetMod()&1?1:0,
+				(*index)->GetMod()&1?30:0, (*index)->GetImm());
 		}
 		// }}}
 };

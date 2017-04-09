@@ -433,7 +433,6 @@ class Cpu {
 	public:
 		// method Run {{{
 		int Run() {
-			PrintState();
 			while(index != program->end()) {
 				if(!watchdog) {
 					cout << "Watchdog has stopped the CPU at command #" << GetIndex() << endl;
@@ -450,6 +449,7 @@ class Cpu {
 					return 1;
 				}
 			}
+			PrintState();
 			return 0;
 		}
 		// }}}
@@ -467,40 +467,43 @@ class Cpu {
 			for(int i=0; i<4; i++) {
 				printf("\e[%d;%dmR%d=%04x\e[0m ", r[i]?0:1, r[i]?31+i:30, i, r[i]);
 			}
-			if((*index)->GetMod() == 0x3) {
-				printf("\e[%dmSRC=R%d\e[0m ", (*index)->GetSrcReg()+31, (*index)->GetSrcReg());
-			} else {
-				printf("\e[1;30mSRC=R%d\e[0m ", (*index)->GetSrcReg());
+			if(index != program->end()) {
+				if((*index)->GetMod() == 0x3) {
+					printf("\e[%dmSRC=R%d\e[0m ", (*index)->GetSrcReg()+31, (*index)->GetSrcReg());
+				} else {
+					printf("\e[1;30mSRC=R%d\e[0m ", (*index)->GetSrcReg());
+				}
+				printf("\e[%dmDEST=R%d\e[0m ", (*index)->GetDestReg()+31, (*index)->GetDestReg());
+				switch((*index)->GetCode()) {
+					case 0x00: printf("CMD=MOV "); break;
+					case 0x01: printf("CMD=OR  "); break;
+					case 0x02: printf("CMD=XOR "); break;
+					case 0x03: printf("CMD=AND "); break;
+					case 0x04: printf("CMD=NEG "); break;
+					case 0x05: printf("CMD=ADD "); break;
+					case 0x06: printf("CMD=SUB "); break;
+					case 0x07: printf("CMD=MUL "); break;
+					case 0x08: printf("CMD=SHL "); break;
+					case 0x09: printf("CMD=SHR "); break;
+					case 0x0a: printf("CMD=INC "); break;
+					case 0x0b: printf("CMD=DEC "); break;
+					case 0x0c: printf("CMD=PUS "); break;
+					case 0x0d: printf("CMD=POP "); break;
+					case 0x0e: printf("CMD=CMP "); break;
+					case 0x0f: printf("CMD=JNZ "); break;
+					case 0x10: printf("CMD=JEZ "); break;
+					default  : printf("CMD=??? ");
+				}
+				switch((*index)->GetMod()) {
+					case 0x0: printf("\e[32mMOD=I   \e[0m"); break;
+					case 0x1: printf("\e[33mMOD=R   \e[0m"); break;
+					case 0x2: printf("\e[34mMOD=I+R \e[0m"); break;
+					case 0x3: printf("\e[35mMOD=R+R \e[0m"); break;
+				}
+				printf("\e[%d;%dmIMM=%04x\e[0m ", (*index)->GetMod()&1?1:0,
+					(*index)->GetMod()&1?30:0, (*index)->GetImm());
 			}
-			printf("\e[%dmDEST=R%d\e[0m ", (*index)->GetDestReg()+31, (*index)->GetDestReg());
-			switch((*index)->GetCode()) {
-				case 0x00: printf("CMD=MOV "); break;
-				case 0x01: printf("CMD=OR  "); break;
-				case 0x02: printf("CMD=XOR "); break;
-				case 0x03: printf("CMD=AND "); break;
-				case 0x04: printf("CMD=NEG "); break;
-				case 0x05: printf("CMD=ADD "); break;
-				case 0x06: printf("CMD=SUB "); break;
-				case 0x07: printf("CMD=MUL "); break;
-				case 0x08: printf("CMD=SHL "); break;
-				case 0x09: printf("CMD=SHR "); break;
-				case 0x0a: printf("CMD=INC "); break;
-				case 0x0b: printf("CMD=DEC "); break;
-				case 0x0c: printf("CMD=PUS "); break;
-				case 0x0d: printf("CMD=POP "); break;
-				case 0x0e: printf("CMD=CMP "); break;
-				case 0x0f: printf("CMD=JNZ "); break;
-				case 0x10: printf("CMD=JEZ "); break;
-				default  : printf("CMD=??? ");
-			}
-			switch((*index)->GetMod()) {
-				case 0x0: printf("\e[32mMOD=I   \e[0m"); break;
-				case 0x1: printf("\e[33mMOD=R   \e[0m"); break;
-				case 0x2: printf("\e[34mMOD=I+R \e[0m"); break;
-				case 0x3: printf("\e[35mMOD=R+R \e[0m"); break;
-			}
-			printf("\e[%d;%dmIMM=%04x\e[0m\n", (*index)->GetMod()&1?1:0,
-				(*index)->GetMod()&1?30:0, (*index)->GetImm());
+			printf("\n");
 		}
 		// }}}
 };
@@ -511,8 +514,8 @@ int Opcode::globalIndex = 0;
 // function main {{{
 int main(int argc, char *argv[])
 {
+	cout << "\n\e[1m0x0ACE CPU EMULATOR STARTED\e[0m\n\n";
 	// Initialization {{{
-	cout << "\n\e[1;41m ======= 0x0ACE ======= \e[0m\n\n";
 	// Validate the args
 	if(argc != 3) {
 		printf("\e[1;41mERROR\e[0m\nusage: %s <input.bin> <output.json>\n", argv[0]);
@@ -584,6 +587,7 @@ int main(int argc, char *argv[])
 		delete opcode;
 	}
 	// }}}
+	cout << "\n\e[1m0x0ACE CPU EMULATOR FINISHED\e[0m\n\n";
 	return 0;
 }
 // }}}

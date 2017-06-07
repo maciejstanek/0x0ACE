@@ -1,3 +1,7 @@
+*.swp
+*.swo
 00_start/scrap.html
 00_start/scrap2.html
 00_start/scrap3.html
+01_sequences/dump.html
+01_sequences/result.txt

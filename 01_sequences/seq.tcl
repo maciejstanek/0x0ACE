@@ -1,9 +1,5 @@
 #!/usr/bin/tclsh
 
-#puts "There are $argc arguments to this script"
-#puts "The name of this script is $argv0"
-#if {$argc > 0} {puts "The other arguments are: $argv" }
-
 if {$argc != 3} {
 	puts error
 	exit 1

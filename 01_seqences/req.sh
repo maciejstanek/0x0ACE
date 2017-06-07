@@ -1,6 +1,7 @@
 #!/bin/bash
 
-gamekey="X-0x0ACE-Key: PKmAZq8oYagM1R6N2ZOlxzJbknvpVXJe9V3q0wyQAe5LKj8W4EPG9dDrm0jW6VNL"
+#gamekey="X-0x0ACE-Key: PKmAZq8oYagM1R6N2ZOlxzJbknvpVXJe9V3q0wyQAe5LKj8W4EPG9dDrm0jW6VNL"
+gamekey="X-0x0ACE-Key: yDRWEpJRJ9WpV0DEzeA1rQLONgKyo7dVvP3wdYMm2Glb6jxakZv4qn5P85Ldg60n"
 
 curl --header "$gamekey" 5.9.247.121/d34dc0d3 > req.html
 verification=$(cat req.html | grep verification | sed 's/.*value=\"\([^\"]*\)\" \/>/\1/')

@@ -8,7 +8,7 @@ key="$1"
 gamekey="X-0x0ACE-Key: $key"
 
 dump_file=dump.html
-curl --header "$gamekey" 5.9.247.121/d34dc0d3 > $dump_file
+curl -f -s --header "$gamekey" 5.9.247.121/d34dc0d3 > $dump_file
 verification=$(cat $dump_file | grep verification | sed 's/.*value=\"\([^\"]*\)\" \/>/\1/')
 echo -e "verification = \e[41m $verification \e[0m"
 ab=$(cat $dump_file | grep "\[[0-9\. ,]\+\.*]" | sed 's/\[\([0-9]\+\), \.\.\., \([0-9]\+\)\].*/\1 \2/')
@@ -24,7 +24,7 @@ echo -e "solution = \e[41m ${list:0:60}... \e[0m"
 data="verification=$verification&solution=$list"
 encoded=$(php html.php "$data")
 
-curl -f -v --data-ascii --data-urlencode --data "$encoded" --header "$gamekey" 5.9.247.121/d34dc0d3
+curl -f -s --data-ascii --data-urlencode --data "$encoded" --header "$gamekey" 5.9.247.121/d34dc0d3
 if [[ $? != 0 ]]; then
 	echo "Something went wrong..."
 	exit 1

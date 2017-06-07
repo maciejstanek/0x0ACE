@@ -1,15 +1,12 @@
 #!/usr/bin/tclsh
 
 if {$argc != 3} {
-	puts error
+	puts "Tcl: Error"
 	exit 1
 }
 set file_name [lindex $argv 0]
 set a [lindex $argv 1]
 set b [lindex $argv 2]
-puts $file_name
-puts $a
-puts $b
 
 set fp [open $file_name r]
 set file_data [read $fp]

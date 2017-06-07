@@ -529,9 +529,9 @@ int main(int argc, char *argv[])
 	}
 	// Load the file into memory
 	ifstream::pos_type binarySize = binaryFile.tellg();
-	char *temp = new char[binarySize];
+	unsigned char *temp = new unsigned char[binarySize];
 	binaryFile.seekg(0, ios::beg);
-	if(!binaryFile.read(temp, binarySize)) {
+	if(!binaryFile.read((char*)temp, binarySize)) {
 		printf("Error while reading the binary file '%s'. Aborting.\n", argv[1]);
 		return 1;
 	}
@@ -555,7 +555,7 @@ int main(int argc, char *argv[])
 				return 1;
 			}
 			opcode->SetImm((temp[byteIndex+1] << 8) + temp[byteIndex]);
-		byteIndex += 2;
+			byteIndex += 2;
 		}
 		// Check sanity
 		if(opcode->Validate()) {
@@ -565,6 +565,7 @@ int main(int argc, char *argv[])
 		// Save the opcode in a vector
 		program.push_back(opcode);
 	}
+	printf("\n");
 	// }}}
 	// Print the parsed opcodes {{{
 	Opcode::PrintHeader();

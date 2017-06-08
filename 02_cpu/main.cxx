@@ -81,8 +81,15 @@ class Opcode
 		// static method PrintHeader {{{
 		static void PrintHeader()
 		{
+			cout << "\u2501\u2501\u2501\u252f\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u252f\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u252f\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u252f\u2501\u2501\u2501\u2501\u2501\u252f\u2501\u2501\u2501\u2501\u2501\u252f\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2511" << endl;
 			cout << "\e[1m#  \u2502 opcode           imm              \u2502 operation          \u2502 modifier \u2502 src \u2502 dst \u2502 imm   \u2502\e[0m" << endl;
 			cout << "\u2501\u2501\u2501\u253f\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u253f\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u253f\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u253f\u2501\u2501\u2501\u2501\u2501\u253f\u2501\u2501\u2501\u2501\u2501\u253f\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2525" << endl;
+		}
+		// }}}
+		// static method PrintFooter {{{
+		static void PrintFooter()
+		{
+			cout << "\u2501\u2501\u2501\u2537\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2537\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2537\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2537\u2501\u2501\u2501\u2501\u2501\u2537\u2501\u2501\u2501\u2501\u2501\u2537\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2519" << endl;
 		}
 		// }}}
 		// method PrintDesc {{{
@@ -514,7 +521,7 @@ int Opcode::globalIndex = 0;
 // function main {{{
 int main(int argc, char *argv[])
 {
-	cout << "\n\e[1m0x0ACE CPU EMULATOR STARTED\e[0m\n\n";
+	cout << "\e[1m0x0ACE CPU EMULATOR - LOADING ROM CONTENT\e[0m\n";
 	// Initialization {{{
 	// Validate the args
 	if(argc != 3) {
@@ -565,15 +572,15 @@ int main(int argc, char *argv[])
 		// Save the opcode in a vector
 		program.push_back(opcode);
 	}
-	printf("\n");
 	// }}}
 	// Print the parsed opcodes {{{
 	Opcode::PrintHeader();
 	for(auto &opcode : program) {
 		opcode->PrintDesc();
 	}
-	cout << endl;
+	Opcode::PrintFooter();
 	// }}}
+	cout << "\e[1m0x0ACE CPU EMULATOR - STARTING\e[0m\n";
 	// Process commands {{{
 	Cpu *cpu  = new Cpu(&program);
 	if(cpu->Run()) {
@@ -588,7 +595,7 @@ int main(int argc, char *argv[])
 		delete opcode;
 	}
 	// }}}
-	cout << "\n\e[1m0x0ACE CPU EMULATOR FINISHED\e[0m\n\n";
+	cout << "\e[1m0x0ACE CPU EMULATOR - FINISHED\e[0m\n";
 	return 0;
 }
 // }}}

@@ -5,3 +5,7 @@
 00_start/scrap3.html
 01_sequences/dump.html
 01_sequences/result.txt
+02_cpu/dump.html
+02_cpu/regs.json
+02_cpu/storage
+02_cpu/acpu

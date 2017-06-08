@@ -8,9 +8,8 @@ key=$1
 url="$2"
 ip=$(echo $url | sed 's/http:\/\/\([^\/]*\)\/.*/\1/')
 game_key="X-0x0ACE-Key: $key"
-storage_dir=storage
-mkdir -p $storage_dir
-binary_file=$storage_dir/$(date "+%Y%m%d%H%M%S").bin
+#binary_file=$storage_dir/$(date "+%Y%m%d%H%M%S").bin
+binary_file=rom.bin
 html_file=dump.html
 json_file=regs.json
 

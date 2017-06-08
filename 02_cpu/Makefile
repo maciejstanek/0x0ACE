@@ -7,3 +7,4 @@ clean:
 	rm -f acpu
 	rm -f dump.html
 	rm -f regs.json
+	rm -f rom.bin

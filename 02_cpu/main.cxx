@@ -469,8 +469,7 @@ class Cpu {
 		// method PrintState {{{
 		void PrintState() {
 			printf("\e[1;30mWD=%04d\e[0m ", watchdog);
-			printf("\e[%dmI=%02d \e[0m", (GetIndex()>15 && GetIndex()<20)?7:0, GetIndex());
-			printf("\e[%cmZ=%d\e[0m ", zeroFlag?'7':'0', zeroFlag);
+			printf("I=%02d ", GetIndex());
 			for(int i=0; i<4; i++) {
 				printf("\e[%d;%dmR%d=%04x\e[0m ", r[i]?0:1, r[i]?31+i:30, i, r[i]);
 			}

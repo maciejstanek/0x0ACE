@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [[ $# != 2 ]]; then
-	echo "Usage: $(basename '$0') <0x0ACE Game Key> <URL>"
+	echo "Usage: ./$(basename $0) <0x0ACE Game Key> <URL>"
 	exit 1
 fi
 key=$1

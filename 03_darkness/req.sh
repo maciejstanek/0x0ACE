@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ip="[2a01:4f8:160:5263::e3d3:467f]:2766"
-#game_key=PKmAZq8oYagM1R6N2ZOlxzJbknvpVXJe9V3q0wyQAe5LKj8W4EPG9dDrm0jW6VNLi
+#game_key=PKmAZq8oYagM1R6N2ZOlxzJbknvpVXJe9V3q0wyQAe5LKj8W4EPG9dDrm0jW6VNL
 game_key=yDRWEpJRJ9WpV0DEzeA1rQLONgKyo7dVvP3wdYMm2Glb6jxakZv4qn5P85Ldg60n
 game_key_header="X-0x0ACE-Key: $game_key"
 echo -e "\e[46;1m$game_key_header\e[0m"

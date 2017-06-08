@@ -14,10 +14,8 @@ close $fp
 set data [split $file_data "\n"]
 set lista [list]
 foreach line $data {
-	set els [split $line " "]
-	set x [lindex $els 1]
-	if {$x > $a && $x < $b} {
-		lappend lista $x
+	if {$line > $a && $line < $b} {
+		lappend lista $line
 	}
 }
 set csv [join $lista ", "]

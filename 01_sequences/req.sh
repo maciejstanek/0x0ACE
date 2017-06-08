@@ -18,7 +18,7 @@ b=$(echo $ab | sed 's/\([0-9]\+\) \([0-9]\+\)/\2/')
 echo -e "a = \e[33;1m$a\e[0m"
 echo -e "b = \e[33;1m$b\e[0m"
 
-./seq.tcl a000040.txt $a $b
+./seq.tcl primes.txt $a $b
 list="$(cat result.txt)"
 echo -e "solution = \e[33;1m${list:0:60}...\e[0m"
 

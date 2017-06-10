@@ -10,6 +10,8 @@ if [[ $? -ne 0 ]]; then
 fi
 
 php main.php $key $ipv6
+if [[ $? -ne 0 ]]; then
+	exit 1
+fi
 
-exit $?
-
+./show.sh

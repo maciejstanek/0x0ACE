@@ -57,8 +57,10 @@ if(strpos($resp, "please wait") !== false) {
 
 $SIZE = 300;
 $walls = [];
-$x = $SIZE / 2;
-$y = $SIZE / 2;
+$x_start = (int)($SIZE / 2);
+$y_start = (int)($SIZE / 2);
+$x = $x_start;
+$y = $y_start;
 $a = 0; // 0 - North, 1 - East, 2 - South, 3 - West
 $x_min = $x;
 $x_max = $x;
@@ -72,22 +74,29 @@ for($j = 0; $j < $SIZE; $j++) {
 			1 => -1,
 			2 => -1,
 			3 => -1,
+			4 => 0,
 		];
 	}
 	$walls[$j] = $walls_row;
 }
-$walls[$x][$y]['V'] = 1;
+$walls[$x][$y][4] = 1;
 
 say("Starting at XYA = (" . implode(", ", [$x, $y, $a]) . ")");
 $fail = false;
-while(!$fail) {
+$watchdog = 1000;
+while(!$fail && --$watchdog) {
+	usleep(100000);
 	$cmd = "";
 	switch($walls[$x][$y][$a]) {
 		case 0:
 			$cmd = "step";
 			break;
 		case 1:
-			$cmd = "turn right";
+			if($walls[$x][$y][($a + 1) % 4] == -1) {
+				$cmd = "turn right";
+			} else {
+				$cmd = "turn left";
+			}
 			break;
 		default:
 			$cmd = "look";
@@ -101,7 +110,12 @@ while(!$fail) {
 		case "step":
 			if($resp == "ok") {
 				$x += ($a == 1)?1:(($a == 3)?-1:0);
-				$y += ($a == 0)?1:(($a == 2)?-1:0);
+				$y += ($a == 2)?1:(($a == 0)?-1:0);
+				$walls[$x][$y][4] = 1;
+				if($x > $x_max) $x_max = $x;
+				if($x < $x_min) $x_min = $x;
+				if($y > $y_max) $y_max = $y;
+				if($y < $y_min) $y_min = $y;
 			} else {
 				say("Step failed!");
 				$fail = true;
@@ -112,7 +126,16 @@ while(!$fail) {
 			if($resp == "ok") {
 				$a = ($a + 1) % 4;
 			} else {
-				say("Step failed!");
+				say("Step right failed!");
+				$fail = true;
+				break;
+			}
+			break;
+		case "turn left":
+			if($resp == "ok") {
+				$a = ($a + 3) % 4;
+			} else {
+				say("Step left failed!");
 				$fail = true;
 				break;
 			}
@@ -152,9 +175,85 @@ while(!$fail) {
 	}
 	say("XYA = (" . implode(", ", [$x, $y, $a]) . ")");
 }
+say("Finished at XYA = (" . implode(", ", [$x, $y, $a]) . ")");
+say("Area is X0Y0X1Y1 = (" . implode(", ", [$x_min, $y_min, $x_max, $y_max]) . ")");
 
 //////////////////////////////////////////////////////////////////////
 
 say("Closing socket...");
 socket_close($socket);
+
+//////////////////////////////////////////////////////////////////////
+
+$x0 = $x_min - 1;
+$y0 = $y_min - 1;
+$xd = $x_max - $x_min + 3;
+$yd = $y_max - $y_min + 3;
+$tile_size = 40;
+$wall_size = 4;
+
+$img = new Imagick();
+$img->newImage($xd * $tile_size, $yd * $tile_size, new ImagickPixel('black'));
+
+$draw = new ImagickDraw();
+say("Drawing...");
+for($j = 0; $j <= $yd; $j++) {
+	for($i = 0; $i <= $xd; $i++) {
+		if($walls[$x0 + $i][$y0 + $j][4]) {
+			$draw->setFillColor('white');
+			$draw->rectangle($i * $tile_size, $j * $tile_size, ($i + 1) * $tile_size - 1, ($j + 1) * $tile_size - 1);
+			$img->drawImage($draw);
+			for($k = 0; $k <= 3; $k++) {
+				if($walls[$x0 + $i][$y0 + $j][$k] != 0) {
+					if($walls[$x0 + $i][$y0 + $j][$k] == -1) {
+						$draw->setFillColor('silver');
+					} else {
+						$draw->setFillColor('gray');
+					}	
+					switch($k) {
+						case 0:
+							$x1 = $i * $tile_size;
+							$y1 = $j * $tile_size;
+							$x2 = ($i + 1) * $tile_size - 1;
+							$y2 = $j * $tile_size + $wall_size - 1;
+							break;
+						case 1:
+							$x1 = ($i + 1) * $tile_size - $wall_size;
+							$y1 = $j * $tile_size;
+							$x2 = ($i + 1) * $tile_size - 1;
+							$y2 = ($j + 1) * $tile_size - 1;
+							break;
+						case 2:
+							$x1 = $i * $tile_size;
+							$y1 = ($j + 1) * $tile_size - $wall_size;
+							$x2 = ($i + 1) * $tile_size - 1;
+							$y2 = ($j + 1) * $tile_size - 1;
+							break;
+						case 3:
+							$x1 = $i * $tile_size;
+							$y1 = $j * $tile_size;
+							$x2 = $i * $tile_size + $wall_size - 1;
+							$y2 = ($j + 1) * $tile_size - 1;
+							break;
+					}
+					$draw->rectangle($x1, $y1, $x2, $y2);
+					$img->drawImage($draw);
+				}
+			}
+			if($x_start == $x0 + $i && $y_start == $y0 + $j) {
+				$draw->setFillColor('red');
+				$ox = (int)(($i + 0.5) * $tile_size);
+				$oy = (int)(($j + 0.5) * $tile_size);
+				$or = (int)($tile_size / 4);
+				$draw->circle($ox, $oy, $ox, $oy + $or);
+				$img->drawImage($draw);
+			}
+		}
+	}
+	say("Drawing progress " . round(100 * $j / $yd, 2) . "%");
+}
+
+$img->setImageFormat("png");
+$img->writeImage("map.png");
+say("Image saved as map.png");
 

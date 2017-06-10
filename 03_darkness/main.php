@@ -40,11 +40,25 @@ if($result === false) {
 	say("socket_connect() failed. Reason: ($result) " . socket_strerror(socket_last_error($socket)));
 	exit(1);
 }
-
 say(socket_read($socket, 2048), 1);
 say($key, 2);
 socket_write($socket, $key, strlen($key));
-say(socket_read($socket, 2048), 1);
+$resp = socket_read($socket, 2048);
+say($resp, 1);
+if(strpos($resp, "invalid key") !== false) {
+	say("The key seems to be invalid");
+	exit(1);
+}
+if(strpos($resp, "please wait") !== false) {
+	say("You have to wait at least 10 minutes before next attempt");
+	exit(1);
+}
+
+//////////////////////////////////////////////////////////////////////
+
+// TODO
+
+//////////////////////////////////////////////////////////////////////
 
 say("Closing socket...");
 socket_close($socket);

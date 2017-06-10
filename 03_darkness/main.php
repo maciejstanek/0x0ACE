@@ -10,7 +10,7 @@ function say($what, $who = 0) {
 			echo "\e[33;1mPlayer\e[0m \e[33m" . $what . "\e[0m\n";
 			break;
 		default:
-			echo "\e[31;1mNotice\e[0m \e[31m" . $what . "\e[0m\n";
+			echo "\e[34;1mNotice\e[0m \e[34m" . $what . "\e[0m\n";
 	}
 }
 
@@ -26,7 +26,6 @@ $split = preg_split('/[\[\]]/', $argv[2]);
 $ipv6_address = $split[1];
 $ipv6_port = preg_replace('/:/' ,'', $split[2]);
 $key = $argv[1];
-
 //////////// TCP/IP Connection /////////////////////////////////////////
 
 $socket = socket_create(AF_INET6, SOCK_STREAM, SOL_TCP);
@@ -56,7 +55,103 @@ if(strpos($resp, "please wait") !== false) {
 
 //////////////////////////////////////////////////////////////////////
 
-// TODO
+$SIZE = 300;
+$walls = [];
+$x = $SIZE / 2;
+$y = $SIZE / 2;
+$a = 0; // 0 - North, 1 - East, 2 - South, 3 - West
+$x_min = $x;
+$x_max = $x;
+$y_min = $y;
+$y_max = $y;
+for($j = 0; $j < $SIZE; $j++) {
+	$walls_row = [];
+	for($i = 0; $i < $SIZE; $i++) {
+		$walls_row[$i] = [
+			0 => -1,
+			1 => -1,
+			2 => -1,
+			3 => -1,
+		];
+	}
+	$walls[$j] = $walls_row;
+}
+$walls[$x][$y]['V'] = 1;
+
+say("Starting at XYA = (" . implode(", ", [$x, $y, $a]) . ")");
+$fail = false;
+while(!$fail) {
+	$cmd = "";
+	switch($walls[$x][$y][$a]) {
+		case 0:
+			$cmd = "step";
+			break;
+		case 1:
+			$cmd = "turn right";
+			break;
+		default:
+			$cmd = "look";
+	}
+	say($cmd, 2);
+	socket_write($socket, $cmd, strlen($cmd));
+	$resp = socket_read($socket, 2048);
+	say($resp, 1);
+
+	switch($cmd) {
+		case "step":
+			if($resp == "ok") {
+				$x += ($a == 1)?1:(($a == 3)?-1:0);
+				$y += ($a == 0)?1:(($a == 2)?-1:0);
+			} else {
+				say("Step failed!");
+				$fail = true;
+				break;
+			}
+			break;
+		case "turn right":
+			if($resp == "ok") {
+				$a = ($a + 1) % 4;
+			} else {
+				say("Step failed!");
+				$fail = true;
+				break;
+			}
+			break;
+		case "look":
+			$status = -1;
+			if($resp == "wall") $status = 1;
+			if($resp == "darkness") $status = 0;
+			if($status == -1) {
+				say("Look failed!");
+				$fail = true;
+				break;
+			}
+			switch($a) {
+				case 0:
+					$walls[$x][$y - 1][2] = $status;
+					$walls[$x][$y][0] = $status;
+					break;
+				case 1:
+					$walls[$x + 1][$y][3] = $status;
+					$walls[$x][$y][1] = $status;
+					break;
+				case 2:
+					$walls[$x][$y + 1][0] = $status;
+					$walls[$x][$y][2] = $status;
+					break;
+				case 3:
+					$walls[$x - 1][$y][1] = $status;
+					$walls[$x][$y][3] = $status;
+					break;
+			}
+			break;
+		default:
+			say("Command error!");
+			$fail = true;
+			break;
+	}
+	say("XYA = (" . implode(", ", [$x, $y, $a]) . ")");
+}
 
 //////////////////////////////////////////////////////////////////////
 

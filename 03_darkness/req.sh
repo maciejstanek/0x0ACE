@@ -9,9 +9,14 @@ if [[ $? -ne 0 ]]; then
 	exit 1
 fi
 
+mkdir -p maps
+rm -f last_resp.txt
 php main.php $key $ipv6
 if [[ $? -ne 0 ]]; then
 	exit 1
+fi
+if [[ -f last_resp.txt ]]; then
+	cat last_resp.txt
 fi
 
 ./show.sh

@@ -1,4 +1,5 @@
 <?php
+// Process arguments {{{
 error_reporting(E_ALL);
 
 function say($what, $who = 0) {
@@ -14,8 +15,6 @@ function say($what, $who = 0) {
 	}
 }
 
-//////////////////////////////////////////////////////////////////////
-
 echo "\$argc = " . $argc . "\n";
 echo "\$argv = " . json_encode($argv) . "\n";
 if($argc != 3) {
@@ -26,8 +25,8 @@ $split = preg_split('/[\[\]]/', $argv[2]);
 $ipv6_address = $split[1];
 $ipv6_port = preg_replace('/:/' ,'', $split[2]);
 $key = $argv[1];
-//////////// TCP/IP Connection /////////////////////////////////////////
-
+// }}}
+// TCP/IP connection {{{
 $socket = socket_create(AF_INET6, SOCK_STREAM, SOL_TCP);
 if($socket === false) {
 	say("socket_create() failed. Reason: " . socket_strerror(socket_last_error()));
@@ -52,72 +51,164 @@ if(strpos($resp, "please wait") !== false) {
 	say("You have to wait at least 10 minutes before next attempt");
 	exit(1);
 }
-
-//////////////////////////////////////////////////////////////////////
-
-$SIZE = 300;
-$walls = [];
+// }}}
+// Main routine {{{
+// Initialize map {{{
+$SIZE = 240;
 $x_start = (int)($SIZE / 2);
 $y_start = (int)($SIZE / 2);
 $x = $x_start;
 $y = $y_start;
+$x_target = $x;
+$y_target = $y;
 $a = 0; // 0 - North, 1 - East, 2 - South, 3 - West
 $x_min = $x;
 $x_max = $x;
 $y_min = $y;
 $y_max = $y;
+$walls = []; // -1 - unknown, 0 - darkness, 1 - wall
 for($j = 0; $j < $SIZE; $j++) {
-	$walls_row = [];
 	for($i = 0; $i < $SIZE; $i++) {
-		$walls_row[$i] = [
-			0 => -1,
-			1 => -1,
-			2 => -1,
-			3 => -1,
-			4 => 0,
-		];
+		$walls[$j][$i] = -1;
 	}
-	$walls[$j] = $walls_row;
 }
-$walls[$x][$y][4] = 1;
-
+$walls[$x][$y] = 0;
+// }}}
 say("Starting at XYA = (" . implode(", ", [$x, $y, $a]) . ")");
 $fail = false;
 $watchdog = 1000;
-while(!$fail && --$watchdog) {
+$watchdog_target = 0;
+// Main loop {{{
+while(!$fail && $watchdog--) {
 	usleep(100000);
-	$cmd = "";
-	switch($walls[$x][$y][$a]) {
-		case 0:
-			$cmd = "step";
-			break;
-		case 1:
-			if($walls[$x][$y][($a + 1) % 4] == -1) {
-				$cmd = "turn right";
-			} else {
-				$cmd = "turn left";
+	// Algorithm {{{
+	// Monitor target {{{
+	if(($x == $x_target && $y == $y_target) || !$watchdog_target--) {
+		$watchdog_target = 300;
+		$x_target = rand(0, $SIZE - 1);
+		$y_target = rand(0, $SIZE - 1);
+		if($walls[$x_target][$y_target][4]) {
+			// Deterministic fallback on already visited
+			for($i = 0; $i < $SIZE; $i++) {
+				for($i = 0; $i < $SIZE; $i++) {
+					if(!$walls[$i][$j][4]) {
+						$x_target = $i;
+						$y_target = $j;
+					}
+				}
 			}
-			break;
-		default:
-			$cmd = "look";
+		}
 	}
+	// }}}
+	// Calculate next step {{{
+	for($j = 0; $j < $SIZE; $j++) {
+		for($i = 0; $i < $SIZE; $i++) {
+			$visited[$j][$i] = 0;
+		}
+	}
+	$nextTileIndex = 1;
+	$nextTiles = [['x' => $x, 'y' => $y]];
+	$foundTarget = false;
+	while(!$foundTarget && $nextTiles) {
+		$newNextTiles = [];
+		foreach($nextTiles as $nextTile) {
+			$xx = $nextTile['x'];
+			$yy = $nextTile['y'];
+			$visited[$xx][$yy] = $nextTileIndex;
+			if($xx == $x_target && $yy == $y_target) {
+				$foundTarget = true;
+			}
+			if($xx > 0 && $walls[$xx - 1][$yy] != 1) {
+				$newNextTiles[] = ['x' => $xx - 1, 'y' => $yy];
+			}
+			if($xx < $SIZE - 1 && $walls[$xx + 1][$yy] != 1) {
+				$newNextTiles[] = ['x' => $xx + 1, 'y' => $yy];
+			}
+			if($yy > 0 && $walls[$xx][$yy - 1] != 1) {
+				$newNextTiles[] = ['x' => $xx, 'y' => $yy - 1];
+			}
+			if($yy < $SIZE - 1 && $walls[$xx][$yy + 1] != 1) {
+				$newNextTiles[] = ['x' => $xx, 'y' => $yy + 1];
+			}
+		}
+		$nextTileIndex++;
+		$nextTiles = $newNextTiles;
+	}
+	$cmd = 'null';
+	if(!$foundTarget) {
+		// This should not happen so I assume that we have to reset target
+		// In a meantime we will stare at the wall
+		$cmd = 'look';
+		$watchdog_target = 0;
+		// TODO: Make a better target finding algorithm
+	} else {
+		$xx = $x_target;
+		$yy = $y_target;
+		$val = $visited[$xx][$yy];
+		$cmdDir = 0;
+		while($val > 1) {
+			if(($nextVal = $visited[$xx - 1][$yy]) == $val - 1) {
+				$cmdDir = 1;
+				$xx--;
+				$val = $nextVal;
+			} elseif(($nextVal = $visited[$xx + 1][$yy]) == $val - 1) {
+				$cmdDir = 3;
+				$xx++;
+				$val = $nextVal;
+			} elseif(($nextVal = $visited[$xx][$yy - 1]) == $val - 1) {
+				$cmdDir = 2;
+				$yy--;
+				$val = $nextVal;
+			} elseif(($nextVal = $visited[$xx][$yy + 1]) == $val - 1) {
+				$cmdDir = 0;
+				$yy++;
+				$val = $nextVal;
+			} else {
+				echo "Should not die here!\n";
+				exit(1);
+			}
+		}
+		// Process next step {{{
+		if($a == $cmdDir) {
+			switch($cmdDir) {
+				case 0: $xx = $x; $yy = $y - 1; break;
+				case 1: $xx = $x + 1; $yy = $y; break;
+				case 2: $xx = $x; $yy = $y + 1; break;
+				case 3: $xx = $x - 1; $yy = $y; break;
+			}
+			if($walls[$xx][$yy] == -1) {
+				$cmd = "look";
+			} else {
+				$cmd = "step";
+			}
+		} elseif(($a + 1) % 4 == $cmdDir) {
+			$cmd = 'turn right';
+		}else {
+			$cmd = 'turn left';
+		}
+		// }}}
+	}
+	// }}}
+	// }}}
+	// Send command {{{
 	say($cmd, 2);
 	socket_write($socket, $cmd, strlen($cmd));
 	$resp = socket_read($socket, 2048);
 	say($resp, 1);
-
+	// }}}
+	// Process command and response {{{
 	switch($cmd) {
 		case "step":
 			if($resp == "ok") {
+				// I assume that I looked there before
 				$x += ($a == 1)?1:(($a == 3)?-1:0);
 				$y += ($a == 2)?1:(($a == 0)?-1:0);
-				$walls[$x][$y][4] = 1;
 				if($x > $x_max) $x_max = $x;
 				if($x < $x_min) $x_min = $x;
 				if($y > $y_max) $y_max = $y;
 				if($y < $y_min) $y_min = $y;
 			} else {
-				say("Step failed!");
+				say("Making step failed!");
 				$fail = true;
 				break;
 			}
@@ -126,7 +217,7 @@ while(!$fail && --$watchdog) {
 			if($resp == "ok") {
 				$a = ($a + 1) % 4;
 			} else {
-				say("Step right failed!");
+				say("Turning right failed!");
 				$fail = true;
 				break;
 			}
@@ -135,7 +226,7 @@ while(!$fail && --$watchdog) {
 			if($resp == "ok") {
 				$a = ($a + 3) % 4;
 			} else {
-				say("Step left failed!");
+				say("Turning left failed!");
 				$fail = true;
 				break;
 			}
@@ -145,7 +236,7 @@ while(!$fail && --$watchdog) {
 			if($resp == "wall") $status = 1;
 			if($resp == "darkness") $status = 0;
 			if($status == -1) {
-				say("Look failed!");
+				say("Looking ahead failed!");
 				$fail = true;
 				break;
 			}
@@ -169,22 +260,22 @@ while(!$fail && --$watchdog) {
 			}
 			break;
 		default:
-			say("Command error!");
+			say("Unknown command!");
 			$fail = true;
 			break;
 	}
+	// }}}
 	say("XYA = (" . implode(", ", [$x, $y, $a]) . ")");
 }
+// }}}
 say("Finished at XYA = (" . implode(", ", [$x, $y, $a]) . ")");
 say("Area is X0Y0X1Y1 = (" . implode(", ", [$x_min, $y_min, $x_max, $y_max]) . ")");
-
-//////////////////////////////////////////////////////////////////////
-
+// }}}
+// Cleanup {{{
 say("Closing socket...");
 socket_close($socket);
-
-//////////////////////////////////////////////////////////////////////
-
+// }}}
+// Draw map {{{
 $x0 = $x_min - 1;
 $y0 = $y_min - 1;
 $xd = $x_max - $x_min + 3;
@@ -194,52 +285,19 @@ $wall_size = 4;
 
 $img = new Imagick();
 $img->newImage($xd * $tile_size, $yd * $tile_size, new ImagickPixel('black'));
-
 $draw = new ImagickDraw();
 say("Drawing...");
 for($j = 0; $j <= $yd; $j++) {
 	for($i = 0; $i <= $xd; $i++) {
-		if($walls[$x0 + $i][$y0 + $j][4]) {
-			$draw->setFillColor('white');
+		if($wall = $walls[$x0 + $i][$y0 + $j] >= 0) {
+			if($wall == 0) {
+				$draw->setFillColor('white');
+			}
+			if($wall == 1) {
+				$draw->setFillColor('gray');
+			}
 			$draw->rectangle($i * $tile_size, $j * $tile_size, ($i + 1) * $tile_size - 1, ($j + 1) * $tile_size - 1);
 			$img->drawImage($draw);
-			for($k = 0; $k <= 3; $k++) {
-				if($walls[$x0 + $i][$y0 + $j][$k] != 0) {
-					if($walls[$x0 + $i][$y0 + $j][$k] == -1) {
-						$draw->setFillColor('silver');
-					} else {
-						$draw->setFillColor('gray');
-					}	
-					switch($k) {
-						case 0:
-							$x1 = $i * $tile_size;
-							$y1 = $j * $tile_size;
-							$x2 = ($i + 1) * $tile_size - 1;
-							$y2 = $j * $tile_size + $wall_size - 1;
-							break;
-						case 1:
-							$x1 = ($i + 1) * $tile_size - $wall_size;
-							$y1 = $j * $tile_size;
-							$x2 = ($i + 1) * $tile_size - 1;
-							$y2 = ($j + 1) * $tile_size - 1;
-							break;
-						case 2:
-							$x1 = $i * $tile_size;
-							$y1 = ($j + 1) * $tile_size - $wall_size;
-							$x2 = ($i + 1) * $tile_size - 1;
-							$y2 = ($j + 1) * $tile_size - 1;
-							break;
-						case 3:
-							$x1 = $i * $tile_size;
-							$y1 = $j * $tile_size;
-							$x2 = $i * $tile_size + $wall_size - 1;
-							$y2 = ($j + 1) * $tile_size - 1;
-							break;
-					}
-					$draw->rectangle($x1, $y1, $x2, $y2);
-					$img->drawImage($draw);
-				}
-			}
 			if($x_start == $x0 + $i && $y_start == $y0 + $j) {
 				$draw->setFillColor('red');
 				$ox = (int)(($i + 0.5) * $tile_size);
@@ -252,8 +310,7 @@ for($j = 0; $j <= $yd; $j++) {
 	}
 	say("Drawing progress " . round(100 * $j / $yd, 2) . "%");
 }
-
 $img->setImageFormat("png");
-$img->writeImage("map.png");
-say("Image saved as map.png");
-
+$img->writeImage("maps/map.png");
+say("Image saved as maps/map.png");
+// }}}

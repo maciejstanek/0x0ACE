@@ -76,12 +76,13 @@ $walls[$x][$y] = 0;
 // }}}
 say("Starting at XYA = (" . implode(", ", [$x, $y, $a]) . ")");
 $fail = false;
-$watchdog = 1000;
+$watchdog = 300;
 $watchdog_target = 0;
 // Main loop {{{
 while(!$fail && $watchdog--) {
 	usleep(100000);
 	// Algorithm {{{
+	// TODO: if there is an unknown (-1) tile surrounded by walls (1) then assume it is also a wall
 	// Monitor target {{{
 	if(($x == $x_target && $y == $y_target) || !$watchdog_target--) {
 		$watchdog_target = 300;
@@ -109,6 +110,8 @@ while(!$fail && $watchdog--) {
 	$nextTileIndex = 1;
 	$nextTiles = [['x' => $x, 'y' => $y]];
 	$foundTarget = false;
+	$xx = $x;
+	$yy = $y;
 	while(!$foundTarget && $nextTiles) {
 		$newNextTiles = [];
 		foreach($nextTiles as $nextTile) {
@@ -117,6 +120,11 @@ while(!$fail && $watchdog--) {
 			$visited[$xx][$yy] = $nextTileIndex;
 			if($xx == $x_target && $yy == $y_target) {
 				$foundTarget = true;
+				break;
+			}
+			if($walls[$xx][$yy] == -1) {
+				$foundTarget = true;
+				break;
 			}
 			if($xx > 0 && $walls[$xx - 1][$yy] != 1) {
 				$newNextTiles[] = ['x' => $xx - 1, 'y' => $yy];
@@ -142,8 +150,6 @@ while(!$fail && $watchdog--) {
 		$watchdog_target = 0;
 		// TODO: Make a better target finding algorithm
 	} else {
-		$xx = $x_target;
-		$yy = $y_target;
 		$val = $visited[$xx][$yy];
 		$cmdDir = 0;
 		while($val > 1) {
@@ -242,20 +248,20 @@ while(!$fail && $watchdog--) {
 			}
 			switch($a) {
 				case 0:
-					$walls[$x][$y - 1][2] = $status;
-					$walls[$x][$y][0] = $status;
+					$walls[$x][$y - 1] = $status;
+					$walls[$x][$y] = $status;
 					break;
 				case 1:
-					$walls[$x + 1][$y][3] = $status;
-					$walls[$x][$y][1] = $status;
+					$walls[$x + 1][$y] = $status;
+					$walls[$x][$y] = $status;
 					break;
 				case 2:
-					$walls[$x][$y + 1][0] = $status;
-					$walls[$x][$y][2] = $status;
+					$walls[$x][$y + 1] = $status;
+					$walls[$x][$y] = $status;
 					break;
 				case 3:
-					$walls[$x - 1][$y][1] = $status;
-					$walls[$x][$y][3] = $status;
+					$walls[$x - 1][$y] = $status;
+					$walls[$x][$y] = $status;
 					break;
 			}
 			break;
@@ -289,7 +295,7 @@ $draw = new ImagickDraw();
 say("Drawing...");
 for($j = 0; $j <= $yd; $j++) {
 	for($i = 0; $i <= $xd; $i++) {
-		if($wall = $walls[$x0 + $i][$y0 + $j] >= 0) {
+		if(($wall = $walls[$x0 + $i][$y0 + $j]) >= 0) {
 			if($wall == 0) {
 				$draw->setFillColor('white');
 			}

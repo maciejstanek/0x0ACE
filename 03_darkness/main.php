@@ -89,8 +89,8 @@ function drawMap(&$walls, $filename, $player) {
 }
 // }}}
 // Process arguments {{{
-echo "\$argc = " . $argc . "\n";
-echo "\$argv = " . json_encode($argv) . "\n";
+//echo "\$argc = " . $argc . "\n";
+//echo "\$argv = " . json_encode($argv) . "\n";
 if($argc != 3) {
 	say("Usage error. Should be: php main.php <key> <[ipv6]:port>");
 	exit(1);
@@ -133,8 +133,6 @@ $x_start = (int)($SIZE / 2);
 $y_start = (int)($SIZE / 2);
 $x = $x_start;
 $y = $y_start;
-$x_target = $x;
-$y_target = $y;
 $a = 0; // 0 - North, 1 - East, 2 - South, 3 - West
 $walls = []; // -1 - unknown, 0 - darkness, 1 - wall
 for($j = 0; $j < $SIZE; $j++) {
@@ -146,33 +144,14 @@ $walls[$x][$y] = 0;
 // }}}
 say("Starting at XYA = (" . implode(", ", [$x, $y, $a]) . ")");
 $fail = false;
-$watchdog = 300;
+$watchdog = 200;
 $iter = 0;
 $watchdog_target = 0;
 // Main loop {{{
 while(!$fail && $watchdog--) {
 	usleep(100000);
-	// Algorithm {{{
+	// Algorithm: Calculate next step {{{
 	// TODO: if there is an unknown (-1) tile surrounded by walls (1) then assume it is also a wall
-	// Monitor target {{{
-	if(($x == $x_target && $y == $y_target) || !$watchdog_target--) {
-		$watchdog_target = 300;
-		$x_target = rand(0, $SIZE - 1);
-		$y_target = rand(0, $SIZE - 1);
-		if($walls[$x_target][$y_target][4]) {
-			// Deterministic fallback on already visited
-			for($i = 0; $i < $SIZE; $i++) {
-				for($i = 0; $i < $SIZE; $i++) {
-					if(!$walls[$i][$j][4]) {
-						$x_target = $i;
-						$y_target = $j;
-					}
-				}
-			}
-		}
-	}
-	// }}}
-	// Calculate next step {{{
 	for($j = 0; $j < $SIZE; $j++) {
 		for($i = 0; $i < $SIZE; $i++) {
 			$visited[$j][$i] = 0;
@@ -180,93 +159,90 @@ while(!$fail && $watchdog--) {
 	}
 	$nextTileIndex = 1;
 	$nextTiles = [['x' => $x, 'y' => $y]];
-	$foundTarget = false;
-	$xx = $x;
-	$yy = $y;
-	while(!$foundTarget && $nextTiles) {
+	while($nextTiles) {
 		$newNextTiles = [];
 		foreach($nextTiles as $nextTile) {
 			$xx = $nextTile['x'];
 			$yy = $nextTile['y'];
 			$visited[$xx][$yy] = $nextTileIndex;
-			if($xx == $x_target && $yy == $y_target) {
-				$foundTarget = true;
-				break;
-			}
 			if($walls[$xx][$yy] == -1) {
-				$foundTarget = true;
+				// NOTE: 'xx' and 'yy' are the search algorithm return values
 				break;
 			}
-			if($xx > 0 && $walls[$xx - 1][$yy] != 1) {
-				$newNextTiles[] = ['x' => $xx - 1, 'y' => $yy];
+			if($xx > 0 && $walls[$xx - 1][$yy] != 1 && !$visited[$xx - 1][$yy]) {
+				$newNextTiles[] = ['x' => ($xx - 1), 'y' => $yy];
 			}
-			if($xx < $SIZE - 1 && $walls[$xx + 1][$yy] != 1) {
-				$newNextTiles[] = ['x' => $xx + 1, 'y' => $yy];
+			if($xx < $SIZE - 1 && $walls[$xx + 1][$yy] != 1 && !$visited[$xx + 1][$yy]) {
+				$newNextTiles[] = ['x' => ($xx + 1), 'y' => $yy];
 			}
-			if($yy > 0 && $walls[$xx][$yy - 1] != 1) {
-				$newNextTiles[] = ['x' => $xx, 'y' => $yy - 1];
+			if($yy > 0 && $walls[$xx][$yy - 1] != 1 && !$visited[$xx][$yy - 1]) {
+				$newNextTiles[] = ['x' => $xx, 'y' => ($yy - 1)];
 			}
-			if($yy < $SIZE - 1 && $walls[$xx][$yy + 1] != 1) {
-				$newNextTiles[] = ['x' => $xx, 'y' => $yy + 1];
+			if($yy < $SIZE - 1 && $walls[$xx][$yy + 1] != 1 && !$visited[$xx][$yy + 1]) {
+				$newNextTiles[] = ['x' => $xx, 'y' => ($yy + 1)];
 			}
 		}
 		$nextTileIndex++;
 		$nextTiles = $newNextTiles;
+		/*
+		var_dump($nextTiles);
+		for($i = (int)($SIZE / 2 - 4); $i <= (int)($SIZE / 2 + 4); $i++) {
+			for($j = (int)($SIZE / 2 - 4); $j <= (int)($SIZE / 2 + 4); $j++) {
+				echo sprintf("\e[%sm(%05d)\e[0m", $visited[$j][$i] ? "41;1" : "0", $visited[$j][$i]);
+			}
+			echo "\n";
+		}
+		*/
 	}
 	$cmd = 'null';
-	if(!$foundTarget) {
-		// This should not happen so I assume that we have to reset target
-		// In a meantime we will stare at the wall
-		$cmd = 'look';
-		$watchdog_target = 0;
-		// TODO: Make a better target finding algorithm
-	} else {
-		$val = $visited[$xx][$yy];
-		$cmdDir = 0;
-		while($val > 1) {
-			if(($nextVal = $visited[$xx - 1][$yy]) == $val - 1) {
-				$cmdDir = 1;
-				$xx--;
-				$val = $nextVal;
-			} elseif(($nextVal = $visited[$xx + 1][$yy]) == $val - 1) {
-				$cmdDir = 3;
-				$xx++;
-				$val = $nextVal;
-			} elseif(($nextVal = $visited[$xx][$yy - 1]) == $val - 1) {
-				$cmdDir = 2;
-				$yy--;
-				$val = $nextVal;
-			} elseif(($nextVal = $visited[$xx][$yy + 1]) == $val - 1) {
-				$cmdDir = 0;
-				$yy++;
-				$val = $nextVal;
-			} else {
-				// TODO: Sometimes dies here
-				echo "Should not die here!\n";
-				exit(1);
-			}
+	$val = $visited[$xx][$yy];
+	$cmdDir = 0;
+	while($val > 1) {
+		$nextVal0 = $visited[$xx][$yy - 1];
+		$nextVal1 = $visited[$xx + 1][$yy];
+		$nextVal2 = $visited[$xx][$yy + 1];
+		$nextVal3 = $visited[$xx - 1][$yy];
+		if($nextVal0 == $val - 1) {
+			$cmdDir = 2;
+			$yy--;
+			$val = $nextVal0;
+		} elseif($nextVal1 == $val - 1) {
+			$cmdDir = 3;
+			$xx++;
+			$val = $nextVal1;
+		} elseif($nextVal2 == $val - 1) {
+			$cmdDir = 0;
+			$yy++;
+			$val = $nextVal2;
+		} elseif($nextVal3 == $val - 1) {
+			$cmdDir = 1;
+			$xx--;
+			$val = $nextVal3;
+		} else {
+			// TODO: Sometimes dies here
+			echo "Should not die here!\n";
+			exit(1);
 		}
-		// Process next step {{{
-		if($a == $cmdDir) {
-			switch($cmdDir) {
-				case 0: $xx = $x; $yy = $y - 1; break;
-				case 1: $xx = $x + 1; $yy = $y; break;
-				case 2: $xx = $x; $yy = $y + 1; break;
-				case 3: $xx = $x - 1; $yy = $y; break;
-			}
-			if($walls[$xx][$yy] == -1) {
-				$cmd = "look";
-			} else {
-				$cmd = "step";
-			}
-		} elseif(($a + 1) % 4 == $cmdDir) {
-			$cmd = 'turn right';
-		}else {
-			$cmd = 'turn left';
-		}
-		// }}}
 	}
 	// }}}
+	// Process next step {{{
+	if($a == $cmdDir) {
+		switch($cmdDir) {
+			case 0: $xx = $x; $yy = $y - 1; break;
+			case 1: $xx = $x + 1; $yy = $y; break;
+			case 2: $xx = $x; $yy = $y + 1; break;
+			case 3: $xx = $x - 1; $yy = $y; break;
+		}
+		if($walls[$xx][$yy] == -1) {
+			$cmd = "look";
+		} else {
+			$cmd = "step";
+		}
+	} elseif(($a + 1) % 4 == $cmdDir) {
+		$cmd = 'turn right';
+	}else {
+		$cmd = 'turn left';
+	}
 	// }}}
 	// Send command {{{
 	say($cmd, 2);

@@ -18,6 +18,6 @@ if [[ $? -ne 0 ]]; then
 	exit 1
 fi
 if [[ -f last_resp.txt ]]; then
-	cat last_resp.txt
+	cat last_resp.txt | tr '\n' ' '
 fi
 

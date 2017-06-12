@@ -1,5 +1,5 @@
 <?php
-// Process arguments {{{
+// Init {{{
 error_reporting(E_ALL);
 
 function say($what, $who = 0) {
@@ -14,7 +14,81 @@ function say($what, $who = 0) {
 			echo "\e[34;1mNotice\e[0m \e[34m" . $what . "\e[0m\n";
 	}
 }
+// }}}
+// Drawing function {{{
+function drawMap(&$walls, $filename, $player) {
+	$infered_size = count($walls[0]);
+	$infered_x_max   = $infered_x_min   = (int)($infered_size / 2);
+	$infered_y_max   = $infered_y_min   = (int)($infered_size / 2);
+	$infered_x_start = $infered_y_start = (int)($infered_size / 2);
+	for($j = 0; $j < $infered_size; $j++) {
+		for($i = 0; $i < $infered_size; $i++) {
+			if($walls[$j][$i] != -1) {
+				$infered_x_max = ($j > $infered_x_max) ? $j : $infered_x_max;
+				$infered_x_min = ($j < $infered_x_min) ? $j : $infered_x_min;
+				$infered_y_max = ($i > $infered_y_max) ? $i : $infered_y_max;
+				$infered_y_min = ($i < $infered_y_min) ? $i : $infered_y_min;
+			}
+		}
+	}
+	$x0 = $infered_x_min - 1;
+	$y0 = $infered_y_min - 1;
+	$xd = $infered_x_max - $infered_x_min + 3;
+	$yd = $infered_y_max - $infered_y_min + 3;
+	$tile_size = 20;
 
+	$img = new Imagick();
+	$img->newImage($xd * $tile_size, $yd * $tile_size, new ImagickPixel('black'));
+	$drawTile = new ImagickDraw();
+	$drawPlayer = new ImagickDraw();
+	$drawStart = new ImagickDraw();
+	$pixWall = new ImagickPixel('#888');
+	$pixWallStroke = new ImagickPixel('#555');
+	$pixEmpty = new ImagickPixel('white');
+	for($j = 0; $j <= $yd; $j++) {
+		for($i = 0; $i <= $xd; $i++) {
+			if(($wall = $walls[$x0 + $i][$y0 + $j]) >= 0) {
+				if($wall == 0) {
+					$drawTile->setFillColor($pixEmpty);
+					$drawTile->setStrokeColor($pixEmpty);
+					$drawTile->setStrokeWidth(0);
+				}
+				if($wall == 1) {
+					$drawTile->setFillColor($pixWall);
+					$drawTile->setStrokeColor($pixWallStroke);
+					$drawTile->setStrokeWidth(2);
+				}
+				$drawTile->rectangle($i * $tile_size, $j * $tile_size, ($i + 1) * $tile_size - 1, ($j + 1) * $tile_size - 1);
+				if($infered_x_start == $x0 + $i && $infered_y_start == $y0 + $j) {
+					$drawStart->setFillColor('blue');
+					$ox = (int)(($i + 0.5) * $tile_size);
+					$oy = (int)(($j + 0.5) * $tile_size);
+					$or = (int)(0.3 * $tile_size);
+					$drawStart->circle($ox, $oy, $ox, $oy + $or);
+				}
+				if($player && $player['x'] == $i + $x0 && $player['y'] == $j + $y0) {
+					$drawPlayer->setFillColor('crimson');
+					$ox = (int)(($i + 0.5) * $tile_size);
+					$oy = (int)(($j + 0.5) * $tile_size);
+					$or = (int)(0.3 * $tile_size);
+					$drawPlayer->circle($ox, $oy, $ox, $oy + $or);
+					$drawPlayer->setStrokeColor('black');
+					$drawPlayer->setStrokeWidth(2);
+					$ex = ((int)(0.4 * $tile_size)) * (($player['a'] == 1) ? 1 : (($player['a'] == 3) ? -1 : 0));
+					$ey = ((int)(0.4 * $tile_size)) * (($player['a'] == 2) ? 1 : (($player['a'] == 0) ? -1 : 0));
+					$drawPlayer->line($ox, $oy, $ox + $ex, $oy + $ey);
+				}
+			}
+		}
+	}
+	$img->drawImage($drawTile);
+	$img->drawImage($drawStart);
+	$img->drawImage($drawPlayer);
+	$img->setImageFormat("png");
+	$img->writeImage($filename);
+}
+// }}}
+// Process arguments {{{
 echo "\$argc = " . $argc . "\n";
 echo "\$argv = " . json_encode($argv) . "\n";
 if($argc != 3) {
@@ -62,10 +136,6 @@ $y = $y_start;
 $x_target = $x;
 $y_target = $y;
 $a = 0; // 0 - North, 1 - East, 2 - South, 3 - West
-$x_min = $x;
-$x_max = $x;
-$y_min = $y;
-$y_max = $y;
 $walls = []; // -1 - unknown, 0 - darkness, 1 - wall
 for($j = 0; $j < $SIZE; $j++) {
 	for($i = 0; $i < $SIZE; $i++) {
@@ -77,6 +147,7 @@ $walls[$x][$y] = 0;
 say("Starting at XYA = (" . implode(", ", [$x, $y, $a]) . ")");
 $fail = false;
 $watchdog = 300;
+$iter = 0;
 $watchdog_target = 0;
 // Main loop {{{
 while(!$fail && $watchdog--) {
@@ -170,6 +241,7 @@ while(!$fail && $watchdog--) {
 				$yy++;
 				$val = $nextVal;
 			} else {
+				// TODO: Sometimes dies here
 				echo "Should not die here!\n";
 				exit(1);
 			}
@@ -201,6 +273,7 @@ while(!$fail && $watchdog--) {
 	socket_write($socket, $cmd, strlen($cmd));
 	$resp = socket_read($socket, 2048);
 	say($resp, 1);
+	file_put_contents('last_resp.txt', $resp . "\n", FILE_APPEND);
 	// }}}
 	// Process command and response {{{
 	switch($cmd) {
@@ -209,10 +282,6 @@ while(!$fail && $watchdog--) {
 				// I assume that I looked there before
 				$x += ($a == 1)?1:(($a == 3)?-1:0);
 				$y += ($a == 2)?1:(($a == 0)?-1:0);
-				if($x > $x_max) $x_max = $x;
-				if($x < $x_min) $x_min = $x;
-				if($y > $y_max) $y_max = $y;
-				if($y < $y_min) $y_min = $y;
 			} else {
 				say("Making step failed!");
 				$fail = true;
@@ -249,19 +318,15 @@ while(!$fail && $watchdog--) {
 			switch($a) {
 				case 0:
 					$walls[$x][$y - 1] = $status;
-					$walls[$x][$y] = $status;
 					break;
 				case 1:
 					$walls[$x + 1][$y] = $status;
-					$walls[$x][$y] = $status;
 					break;
 				case 2:
 					$walls[$x][$y + 1] = $status;
-					$walls[$x][$y] = $status;
 					break;
 				case 3:
 					$walls[$x - 1][$y] = $status;
-					$walls[$x][$y] = $status;
 					break;
 			}
 			break;
@@ -272,51 +337,13 @@ while(!$fail && $watchdog--) {
 	}
 	// }}}
 	say("XYA = (" . implode(", ", [$x, $y, $a]) . ")");
+	$mapName = "maps/map_" . sprintf("%07d", ++$iter) . ".png";
+	drawMap($walls, $mapName, ['x' => $x, 'y' => $y, 'a' => $a]);
+	copy($mapName, 'final_map.png') or die("Failed to copy a map!\n");
 }
 // }}}
-say("Finished at XYA = (" . implode(", ", [$x, $y, $a]) . ")");
-say("Area is X0Y0X1Y1 = (" . implode(", ", [$x_min, $y_min, $x_max, $y_max]) . ")");
 // }}}
 // Cleanup {{{
 say("Closing socket...");
 socket_close($socket);
-// }}}
-// Draw map {{{
-$x0 = $x_min - 1;
-$y0 = $y_min - 1;
-$xd = $x_max - $x_min + 3;
-$yd = $y_max - $y_min + 3;
-$tile_size = 40;
-$wall_size = 4;
-
-$img = new Imagick();
-$img->newImage($xd * $tile_size, $yd * $tile_size, new ImagickPixel('black'));
-$draw = new ImagickDraw();
-say("Drawing...");
-for($j = 0; $j <= $yd; $j++) {
-	for($i = 0; $i <= $xd; $i++) {
-		if(($wall = $walls[$x0 + $i][$y0 + $j]) >= 0) {
-			if($wall == 0) {
-				$draw->setFillColor('white');
-			}
-			if($wall == 1) {
-				$draw->setFillColor('gray');
-			}
-			$draw->rectangle($i * $tile_size, $j * $tile_size, ($i + 1) * $tile_size - 1, ($j + 1) * $tile_size - 1);
-			$img->drawImage($draw);
-			if($x_start == $x0 + $i && $y_start == $y0 + $j) {
-				$draw->setFillColor('red');
-				$ox = (int)(($i + 0.5) * $tile_size);
-				$oy = (int)(($j + 0.5) * $tile_size);
-				$or = (int)($tile_size / 4);
-				$draw->circle($ox, $oy, $ox, $oy + $or);
-				$img->drawImage($draw);
-			}
-		}
-	}
-	say("Drawing progress " . round(100 * $j / $yd, 2) . "%");
-}
-$img->setImageFormat("png");
-$img->writeImage("maps/map.png");
-say("Image saved as maps/map.png");
 // }}}

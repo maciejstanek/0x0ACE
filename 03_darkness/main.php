@@ -35,54 +35,60 @@ function drawMap(&$walls, $filename, $player) {
 	$y0 = $infered_y_min - 1;
 	$xd = $infered_x_max - $infered_x_min + 3;
 	$yd = $infered_y_max - $infered_y_min + 3;
-	$tile_size = 20;
+	$tile_size = 5;
 
 	$img = new Imagick();
 	$img->newImage($xd * $tile_size, $yd * $tile_size, new ImagickPixel('black'));
 	$drawTile = new ImagickDraw();
 	$drawPlayer = new ImagickDraw();
-	$drawStart = new ImagickDraw();
-	$pixWall = new ImagickPixel('#888');
-	$pixWallStroke = new ImagickPixel('#555');
-	$pixEmpty = new ImagickPixel('white');
+	$pixWall = new ImagickPixel('grey52');
+	$pixWallStroke = new ImagickPixel('grey33');
+	$pixEmpty = new ImagickPixel('linen');
+	$pixStart = new ImagickPixel('blue3');
+	$pixStartStroke = new ImagickPixel('blue1');
+	$pixPlayer = new ImagickPixel('red1');
+	$pixPlayerHead = new ImagickPixel('red3');
 	for($j = 0; $j <= $yd; $j++) {
 		for($i = 0; $i <= $xd; $i++) {
 			if(($wall = $walls[$x0 + $i][$y0 + $j]) >= 0) {
 				if($wall == 0) {
 					$drawTile->setFillColor($pixEmpty);
-					$drawTile->setStrokeColor($pixEmpty);
 					$drawTile->setStrokeWidth(0);
+					$drawTile->setStrokeColor($pixEmpty);
 				}
 				if($wall == 1) {
 					$drawTile->setFillColor($pixWall);
+					$drawTile->setStrokeWidth(1);
 					$drawTile->setStrokeColor($pixWallStroke);
-					$drawTile->setStrokeWidth(2);
 				}
-				$drawTile->rectangle($i * $tile_size, $j * $tile_size, ($i + 1) * $tile_size - 1, ($j + 1) * $tile_size - 1);
 				if($infered_x_start == $x0 + $i && $infered_y_start == $y0 + $j) {
-					$drawStart->setFillColor('blue');
-					$ox = (int)(($i + 0.5) * $tile_size);
-					$oy = (int)(($j + 0.5) * $tile_size);
-					$or = (int)(0.3 * $tile_size);
-					$drawStart->circle($ox, $oy, $ox, $oy + $or);
+					$drawTile->setFillColor($pixStart);
+					$drawTile->setStrokeWidth(0);
+					$drawTile->setStrokeColor($pixStart);
 				}
+				$ax = $i * $tile_size;
+				$ay = $j * $tile_size;
+				$bx = ($i + 1) * $tile_size - 1;
+				$by = ($j + 1) * $tile_size - 1;
+				$drawTile->rectangle($ax, $ay, $bx, $by);
 				if($player && $player['x'] == $i + $x0 && $player['y'] == $j + $y0) {
-					$drawPlayer->setFillColor('crimson');
-					$ox = (int)(($i + 0.5) * $tile_size);
-					$oy = (int)(($j + 0.5) * $tile_size);
-					$or = (int)(0.3 * $tile_size);
-					$drawPlayer->circle($ox, $oy, $ox, $oy + $or);
-					$drawPlayer->setStrokeColor('black');
-					$drawPlayer->setStrokeWidth(2);
-					$ex = ((int)(0.4 * $tile_size)) * (($player['a'] == 1) ? 1 : (($player['a'] == 3) ? -1 : 0));
-					$ey = ((int)(0.4 * $tile_size)) * (($player['a'] == 2) ? 1 : (($player['a'] == 0) ? -1 : 0));
-					$drawPlayer->line($ox, $oy, $ox + $ex, $oy + $ey);
+					$drawPlayer->setFillColor($pixPlayer);
+					$drawPlayer->rectangle($ax, $ay, $bx, $by);
+					$drawPlayer->setStrokeColor($pixPlayerHead);
+					$drawPlayer->setStrokeWidth(1);
+					$cx = $cy = $dx = $dy = 0;
+					switch($player['a']) {
+						case 0: $cx = $ax; $cy = $ay; $dx = $bx; $dy = $ay; break;
+						case 1: $cx = $bx; $cy = $ay; $dx = $bx; $dy = $by; break;
+						case 2: $cx = $bx; $cy = $by; $dx = $ax; $dy = $by; break;
+						case 3: $cx = $ax; $cy = $by; $dx = $ax; $dy = $ay; break;
+					}
+					$drawPlayer->line($cx, $cy, $dx, $dy);
 				}
 			}
 		}
 	}
 	$img->drawImage($drawTile);
-	$img->drawImage($drawStart);
 	$img->drawImage($drawPlayer);
 	$img->setImageFormat("png");
 	$img->writeImage($filename);
@@ -143,13 +149,16 @@ for($j = 0; $j < $SIZE; $j++) {
 $walls[$x][$y] = 0;
 // }}}
 say("Starting at XYA = (" . implode(", ", [$x, $y, $a]) . ")");
-$fail = false;
-$watchdog = 200;
+$end = false;
 $iter = 0;
-$watchdog_target = 0;
+$doors_ahead = false;
+$timestamp = 0.0;
 // Main loop {{{
-while(!$fail && $watchdog--) {
-	usleep(100000);
+while(!$end) {
+	// Timing {{{
+	while(microtime(true) - $timestamp < 0.101); // Wait!
+	$timestamp = microtime(true);
+	// }}}
 	// Algorithm: Calculate next step {{{
 	// TODO: if there is an unknown (-1) tile surrounded by walls (1) then assume it is also a wall
 	for($j = 0; $j < $SIZE; $j++) {
@@ -241,14 +250,19 @@ while(!$fail && $watchdog--) {
 			case 3: $xx = $x - 1; $yy = $y; break;
 		}
 		if($walls[$xx][$yy] == -1) {
-			$cmd = "look";
+			$cmd = 'look';
 		} else {
-			$cmd = "step";
+			$cmd = 'step';
 		}
 	} elseif(($a + 1) % 4 == $cmdDir) {
 		$cmd = 'turn right';
 	}else {
 		$cmd = 'turn left';
+	}
+	if($doors_ahead) {
+		// Force step forward if the exit if ahead
+		$cmd = 'step';
+		$doors_ahead = false;
 	}
 	// }}}
 	// Send command {{{
@@ -267,7 +281,7 @@ while(!$fail && $watchdog--) {
 				$y += ($a == 2)?1:(($a == 0)?-1:0);
 			} else {
 				say("Making step failed!");
-				$fail = true;
+				$end = true;
 				break;
 			}
 			break;
@@ -276,7 +290,7 @@ while(!$fail && $watchdog--) {
 				$a = ($a + 1) % 4;
 			} else {
 				say("Turning right failed!");
-				$fail = true;
+				$end = true;
 				break;
 			}
 			break;
@@ -285,17 +299,23 @@ while(!$fail && $watchdog--) {
 				$a = ($a + 3) % 4;
 			} else {
 				say("Turning left failed!");
-				$fail = true;
+				$end = true;
 				break;
 			}
 			break;
 		case "look":
 			$status = -1;
-			if($resp == "wall") $status = 1;
-			if($resp == "darkness") $status = 0;
+			if($resp == "doors") {
+				$doors_ahead = true;
+				$status = 0;
+			} elseif($resp == "wall") {
+				$status = 1;
+			} elseif($resp == "darkness") {
+				$status = 0;
+			}
 			if($status == -1) {
 				say("Looking ahead failed!");
-				$fail = true;
+				$end = true;
 				break;
 			}
 			switch($a) {
@@ -315,14 +335,15 @@ while(!$fail && $watchdog--) {
 			break;
 		default:
 			say("Unknown command!");
-			$fail = true;
+			$end = true;
 			break;
 	}
 	// }}}
 	say("XYA = (" . implode(", ", [$x, $y, $a]) . ")");
-	$mapName = "maps/map_" . sprintf("%07d", ++$iter) . ".png";
-	drawMap($walls, $mapName, ['x' => $x, 'y' => $y, 'a' => $a]);
-	copy($mapName, 'final_map.png') or die("Failed to copy a map!\n");
+	if(!($iter++ % 200) || $end) {
+		// Draw map every each 200 step (and at the end) to save resources
+		drawMap($walls, 'map.png' , ['x' => $x, 'y' => $y, 'a' => $a]);
+	}
 }
 // }}}
 // }}}

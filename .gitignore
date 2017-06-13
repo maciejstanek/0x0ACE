@@ -9,6 +9,5 @@
 02_cpu/regs.json
 02_cpu/rom.bin
 02_cpu/acpu
-03_darkness/maps
-03_darkness/final_map.png
+03_darkness/map.png
 03_darkness/last_resp.txt

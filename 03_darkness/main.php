@@ -156,7 +156,7 @@ $timestamp = 0.0;
 // Main loop {{{
 while(!$end) {
 	// Timing {{{
-	while(microtime(true) - $timestamp < 0.101); // Wait!
+	while(microtime(true) - $timestamp < 0.12); // Wait (a little bit more that 100ms)
 	$timestamp = microtime(true);
 	// }}}
 	// Algorithm: Calculate next step {{{

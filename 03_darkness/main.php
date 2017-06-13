@@ -158,7 +158,9 @@ while(!$fail && $watchdog--) {
 		}
 	}
 	$nextTileIndex = 1;
-	$nextTiles = [['x' => $x, 'y' => $y]];
+	$xx = $x;
+	$yy = $y;
+	$nextTiles = [['x' => $xx, 'y' => $yy]];
 	while($nextTiles) {
 		$newNextTiles = [];
 		foreach($nextTiles as $nextTile) {
@@ -169,34 +171,39 @@ while(!$fail && $watchdog--) {
 				// NOTE: 'xx' and 'yy' are the search algorithm return values
 				break;
 			}
-			if($xx > 0 && $walls[$xx - 1][$yy] != 1 && !$visited[$xx - 1][$yy]) {
+			if(($xx > 0) && ($walls[$xx - 1][$yy] != 1) && !$visited[$xx - 1][$yy]) {
 				$newNextTiles[] = ['x' => ($xx - 1), 'y' => $yy];
 			}
-			if($xx < $SIZE - 1 && $walls[$xx + 1][$yy] != 1 && !$visited[$xx + 1][$yy]) {
+			if(($xx < $SIZE - 1) && ($walls[$xx + 1][$yy] != 1) && !$visited[$xx + 1][$yy]) {
 				$newNextTiles[] = ['x' => ($xx + 1), 'y' => $yy];
 			}
-			if($yy > 0 && $walls[$xx][$yy - 1] != 1 && !$visited[$xx][$yy - 1]) {
+			if(($yy > 0) && ($walls[$xx][$yy - 1] != 1) && !$visited[$xx][$yy - 1]) {
 				$newNextTiles[] = ['x' => $xx, 'y' => ($yy - 1)];
 			}
-			if($yy < $SIZE - 1 && $walls[$xx][$yy + 1] != 1 && !$visited[$xx][$yy + 1]) {
+			if(($yy < $SIZE - 1) && ($walls[$xx][$yy + 1] != 1) && !$visited[$xx][$yy + 1]) {
 				$newNextTiles[] = ['x' => $xx, 'y' => ($yy + 1)];
 			}
 		}
 		$nextTileIndex++;
 		$nextTiles = $newNextTiles;
 		/*
-		var_dump($nextTiles);
-		for($i = (int)($SIZE / 2 - 4); $i <= (int)($SIZE / 2 + 4); $i++) {
-			for($j = (int)($SIZE / 2 - 4); $j <= (int)($SIZE / 2 + 4); $j++) {
-				echo sprintf("\e[%sm(%05d)\e[0m", $visited[$j][$i] ? "41;1" : "0", $visited[$j][$i]);
+		$d = 8;
+		for($i = (int)($SIZE / 2 - $d); $i <= (int)($SIZE / 2 + $d); $i++) {
+			for($j = (int)($SIZE / 2 - $d); $j <= (int)($SIZE / 2 + $d); $j++) {
+				echo sprintf("\e[%s%sm%03d\e[0m ", ($walls[$j][$i] == -1) ? "34" : ($walls[$j][$i] ? "31" : "32") , $visited[$j][$i] ? ";1" : "", $visited[$j][$i]);
 			}
 			echo "\n";
 		}
+		echo "\n";
 		*/
+		if($walls[$xx][$yy] == -1) {
+			// Double loop break!
+			break;
+		}
 	}
 	$cmd = 'null';
 	$val = $visited[$xx][$yy];
-	$cmdDir = 0;
+	$cmdDir = -1;
 	while($val > 1) {
 		$nextVal0 = $visited[$xx][$yy - 1];
 		$nextVal1 = $visited[$xx + 1][$yy];
@@ -220,8 +227,8 @@ while(!$fail && $watchdog--) {
 			$val = $nextVal3;
 		} else {
 			// TODO: Sometimes dies here
-			echo "Should not die here!\n";
-			exit(1);
+			echo "Should not be here!\n";
+			$cmd = 'look';
 		}
 	}
 	// }}}
